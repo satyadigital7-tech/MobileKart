@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { X, Send } from 'lucide-react';
 
 export const WhatsAppButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +30,9 @@ export const WhatsAppButton: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">
-                  <MessageCircle className="w-6 h-6 text-white" />
+                  <svg className="w-6 h-6 fill-current text-white shrink-0" viewBox="0 0 24 24">
+                    <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.764.459 3.483 1.334 5.003L2 22l5.127-1.341c1.464.798 3.111 1.218 4.881 1.219h.004c5.505 0 9.989-4.478 9.99-9.985 0-2.668-1.039-5.176-2.925-7.061A9.923 9.923 0 0 0 12.012 2zm.004 16.634h-.003a8.31 8.31 0 0 1-4.238-1.164l-.304-.181-3.148.823.839-3.067-.198-.316a8.314 8.314 0 0 1-1.277-4.444c.001-4.59 3.738-8.324 8.334-8.324 2.225 0 4.316.866 5.89 2.441 1.574 1.575 2.44 3.666 2.44 5.892 0 4.591-3.737 8.325-8.335 8.325zm4.567-6.236c-.251-.126-1.484-.732-1.714-.816-.23-.084-.398-.126-.566.126-.168.251-.649.816-.795.983-.146.168-.293.188-.544.063-1.616-.807-2.678-1.437-3.754-3.277-.142-.243.143-.226.409-.757.063-.126.031-.237-.016-.334-.047-.097-.419-1.009-.574-1.381-.151-.362-.305-.313-.419-.319l-.356-.007c-.126 0-.334.047-.502.23-.168.183-.649.634-.649 1.546 0 .912.664 1.793.757 1.919.094.126 1.308 1.996 3.168 2.798 1.482.64 1.8.513 2.135.48.566-.056 1.484-.607 1.693-1.193.209-.586.209-1.089.146-1.193-.063-.105-.23-.168-.481-.294z" />
+                  </svg>
                 </div>
                 <span className="w-3 h-3 bg-emerald-400 border-2 border-slate-900 rounded-full absolute bottom-0 right-0"></span>
               </div>
@@ -99,14 +101,21 @@ export const WhatsAppButton: React.FC = () => {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group relative flex items-center gap-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white px-4 py-3.5 rounded-full shadow-2xl shadow-emerald-900/50 hover:scale-105 transition duration-300"
+        className="group relative flex items-center gap-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white px-4 py-3 rounded-full shadow-2xl shadow-emerald-900/40 hover:scale-105 transition duration-300 border border-emerald-400/40"
       >
-        <MessageCircle className="w-6 h-6 animate-bounce" />
-        <span className="font-bold text-xs pr-1">WhatsApp Support</span>
-        <span className="flex h-3 w-3 absolute -top-1 -right-1">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-        </span>
+        {/* Authentic WhatsApp SVG Logo */}
+        <div className="relative flex items-center justify-center">
+          <svg className="w-6 h-6 fill-current text-white shrink-0 drop-shadow-sm" viewBox="0 0 24 24">
+            <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.764.459 3.483 1.334 5.003L2 22l5.127-1.341c1.464.798 3.111 1.218 4.881 1.219h.004c5.505 0 9.989-4.478 9.99-9.985 0-2.668-1.039-5.176-2.925-7.061A9.923 9.923 0 0 0 12.012 2zm.004 16.634h-.003a8.31 8.31 0 0 1-4.238-1.164l-.304-.181-3.148.823.839-3.067-.198-.316a8.314 8.314 0 0 1-1.277-4.444c.001-4.59 3.738-8.324 8.334-8.324 2.225 0 4.316.866 5.89 2.441 1.574 1.575 2.44 3.666 2.44 5.892 0 4.591-3.737 8.325-8.335 8.325zm4.567-6.236c-.251-.126-1.484-.732-1.714-.816-.23-.084-.398-.126-.566.126-.168.251-.649.816-.795.983-.146.168-.293.188-.544.063-1.616-.807-2.678-1.437-3.754-3.277-.142-.243.143-.226.409-.757.063-.126.031-.237-.016-.334-.047-.097-.419-1.009-.574-1.381-.151-.362-.305-.313-.419-.319l-.356-.007c-.126 0-.334.047-.502.23-.168.183-.649.634-.649 1.546 0 .912.664 1.793.757 1.919.094.126 1.308 1.996 3.168 2.798 1.482.64 1.8.513 2.135.48.566-.056 1.484-.607 1.693-1.193.209-.586.209-1.089.146-1.193-.063-.105-.23-.168-.481-.294z" />
+          </svg>
+          {/* Integrated Online Pulse Dot */}
+          <span className="flex h-2.5 w-2.5 absolute -top-0.5 -right-0.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-200 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300 border border-emerald-600"></span>
+          </span>
+        </div>
+
+        <span className="font-extrabold text-xs tracking-wide">WhatsApp Support</span>
       </button>
     </div>
   );
