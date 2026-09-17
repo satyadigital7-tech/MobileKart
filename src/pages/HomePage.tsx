@@ -62,16 +62,16 @@ export const HomePage: React.FC = () => {
   return (
     <div className="space-y-16 pb-16 bg-slate-50 text-slate-900">
       {/* Hero Section */}
-      <section className="relative pt-12 pb-20 overflow-hidden bg-gradient-to-b from-teal-50/80 via-white to-slate-50 border-b border-slate-200">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-teal-200/40 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-amber-200/40 rounded-full blur-3xl pointer-events-none"></div>
+      <section className="relative pt-12 pb-20 overflow-hidden bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-200/40 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-sky-200/40 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           {/* Left Text */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white border border-teal-300 px-4 py-1.5 rounded-full text-xs font-bold text-teal-800 shadow-sm">
-              <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-              <span>Hyderabad’s #1 Doorstep Mobile Care Platform</span>
+            <div className="inline-flex items-center gap-2 bg-white border border-blue-300 px-4 py-1.5 rounded-full text-xs font-bold text-blue-900 shadow-sm">
+              <Sparkles className="w-4 h-4 text-sky-500 animate-pulse" />
+              <span>Hyderabad’s #1 Mobile Care & Accessories Store</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">
@@ -87,7 +87,7 @@ export const HomePage: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
               <Link
                 to="/repair-booking"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-teal-700 via-teal-800 to-emerald-700 hover:from-teal-600 hover:to-emerald-600 text-white font-black px-7 py-4 rounded-xl shadow-lg text-sm transition transform hover:-translate-y-0.5"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-500 hover:to-blue-600 text-white font-black px-7 py-4 rounded-xl shadow-lg text-sm transition transform hover:-translate-y-0.5"
               >
                 <Wrench className="w-4 h-4" /> Book a Doorstep Repair
               </Link>
@@ -96,26 +96,26 @@ export const HomePage: React.FC = () => {
                 to="/shop"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white hover:bg-slate-100 text-slate-900 font-extrabold px-7 py-4 rounded-xl border border-slate-300 shadow-sm text-sm transition"
               >
-                <ShoppingBag className="w-4 h-4 text-amber-600" /> Shop Accessories
+                <ShoppingBag className="w-4 h-4 text-blue-600" /> Shop Accessories
               </Link>
             </div>
 
             {/* Key Value Props */}
             <div className="pt-6 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-bold text-slate-700">
               <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4 text-teal-700 shrink-0" />
+                <Truck className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>60-Min Service</span>
               </div>
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
                 <span>90-Day Warranty</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-teal-700 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Original Parts</span>
               </div>
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+                <MapPin className="w-4 h-4 text-sky-600 shrink-0" />
                 <span>Hyderabad Lab</span>
               </div>
             </div>
@@ -126,10 +126,10 @@ export const HomePage: React.FC = () => {
             <div className="bg-white p-6 sm:p-7 rounded-3xl shadow-xl border border-slate-200 relative">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-teal-600 animate-ping"></div>
+                  <div className="w-3 h-3 rounded-full bg-blue-600 animate-ping"></div>
                   <h3 className="font-black text-slate-900 text-base">Instant Repair Price Estimator</h3>
                 </div>
-                <span className="text-[11px] font-black text-amber-800 bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300">
+                <span className="text-[11px] font-black text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
                   Hyderabad Zone
                 </span>
               </div>
@@ -141,7 +141,7 @@ export const HomePage: React.FC = () => {
                   <select
                     value={estBrand}
                     onChange={(e) => setEstBrand(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-teal-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-blue-600"
                   >
                     {BRANDS.map((b) => (
                       <option key={b.id} value={b.name}>{b.name}</option>
@@ -155,7 +155,7 @@ export const HomePage: React.FC = () => {
                   <select
                     value={estModel}
                     onChange={(e) => setEstModel(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-teal-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-blue-600"
                   >
                     <option value="iPhone 15">iPhone 15</option>
                     <option value="iPhone 15 Pro Max">iPhone 15 Pro Max</option>
@@ -174,7 +174,7 @@ export const HomePage: React.FC = () => {
                   <select
                     value={estProblemId}
                     onChange={(e) => setEstProblemId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-teal-600"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-blue-600"
                   >
                     {REPAIR_PROBLEMS.map((p) => (
                       <option key={p.id} value={p.id}>{p.title}</option>
@@ -183,17 +183,17 @@ export const HomePage: React.FC = () => {
                 </div>
 
                 {/* Estimated Output Box */}
-                <div className="bg-teal-50/70 border border-teal-200 rounded-2xl p-4 text-center space-y-1">
+                <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 text-center space-y-1">
                   <div className="text-slate-600 text-[11px] font-bold">Estimated Service Price:</div>
-                  <div className="text-3xl font-black text-amber-600">₹{selectedProblem.estimatedPrice.toLocaleString()}</div>
-                  <div className="text-[11px] text-teal-800 font-bold flex items-center justify-center gap-2">
+                  <div className="text-3xl font-black text-blue-600">₹{selectedProblem.estimatedPrice.toLocaleString()}</div>
+                  <div className="text-[11px] text-blue-900 font-bold flex items-center justify-center gap-2">
                     <span>⏱️ {selectedProblem.estimatedTime}</span> • <span>🛡️ {selectedProblem.warranty}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => navigate(`/repair-booking?brand=${encodeURIComponent(estBrand)}&model=${encodeURIComponent(estModel)}&problem=${estProblemId}`)}
-                  className="w-full bg-gradient-to-r from-teal-700 to-teal-800 hover:from-teal-600 hover:to-teal-700 text-white font-black py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-black py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2"
                 >
                   Book Repair for ₹{selectedProblem.estimatedPrice} <ArrowRight className="w-4 h-4" />
                 </button>

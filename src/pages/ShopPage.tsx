@@ -191,12 +191,12 @@ export const ShopPage: React.FC = () => {
                     onClick={() => setCategoryFilter(c.slug)}
                     className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex justify-between items-center ${
                       categoryFilter === c.slug
-                        ? 'bg-teal-100 text-teal-900 border border-teal-300'
+                        ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <span>{c.name}</span>
-                    {categoryFilter === c.slug && <Check className="w-3.5 h-3.5 text-teal-700" />}
+                    {categoryFilter === c.slug && <Check className="w-3.5 h-3.5 text-white" />}
                   </button>
                 ))}
               </div>
@@ -206,7 +206,7 @@ export const ShopPage: React.FC = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="font-extrabold text-slate-800">Max Price</span>
-                <span className="text-amber-700 font-black">₹{maxPrice}</span>
+                <span className="text-blue-600 font-black">₹{maxPrice}</span>
               </div>
               <input
                 type="range"
@@ -215,7 +215,7 @@ export const ShopPage: React.FC = () => {
                 step="100"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full accent-teal-700 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
             </div>
 
@@ -226,7 +226,7 @@ export const ShopPage: React.FC = () => {
                 id="instock"
                 checked={inStockOnly}
                 onChange={(e) => setInStockOnly(e.target.checked)}
-                className="rounded accent-teal-700"
+                className="rounded accent-blue-600"
               />
               <label htmlFor="instock" className="text-xs font-bold text-slate-700 cursor-pointer">
                 In Stock Items Only
@@ -240,7 +240,7 @@ export const ShopPage: React.FC = () => {
           {/* Top Sort & Count Bar */}
           <div className="glass-card p-4 rounded-2xl border border-slate-200 bg-white flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-xs text-slate-600 font-semibold">
-              Showing <span className="font-black text-teal-800">{filteredProducts.length}</span> items
+              Showing <span className="font-black text-blue-600">{filteredProducts.length}</span> items
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -248,7 +248,7 @@ export const ShopPage: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-50 border border-slate-300 text-xs text-slate-900 font-bold rounded-xl px-3.5 py-2 outline-none focus:border-teal-700 w-full sm:w-auto"
+                className="bg-slate-50 border border-slate-300 text-xs text-slate-900 font-bold rounded-xl px-3.5 py-2 outline-none focus:border-blue-600 w-full sm:w-auto"
               >
                 <option value="popular">Most Popular</option>
                 <option value="newest">New Arrivals</option>
@@ -271,7 +271,7 @@ export const ShopPage: React.FC = () => {
               </p>
               <button
                 onClick={resetFilters}
-                className="bg-teal-700 hover:bg-teal-800 text-white font-black text-xs px-5 py-2.5 rounded-xl transition shadow"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-5 py-2.5 rounded-xl transition shadow"
               >
                 Clear Filters
               </button>
@@ -283,7 +283,7 @@ export const ShopPage: React.FC = () => {
                 return (
                   <div
                     key={p.id}
-                    className="glass-card rounded-2xl overflow-hidden border border-slate-200 bg-white flex flex-col justify-between group hover:border-teal-500 transition relative shadow-sm hover:shadow-md"
+                    className="glass-card rounded-2xl overflow-hidden border border-slate-200 bg-white flex flex-col justify-between group hover:border-blue-500 transition relative shadow-sm hover:shadow-md"
                   >
                     <div>
                       {/* Image container */}
@@ -314,7 +314,7 @@ export const ShopPage: React.FC = () => {
                           <Eye className="w-4 h-4" /> Quick Details
                         </button>
 
-                        <span className="absolute bottom-3 left-3 bg-white/90 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded border border-teal-200 shadow-sm">
+                        <span className="absolute bottom-3 left-3 bg-white/90 text-blue-900 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200 shadow-sm">
                           {p.brand}
                         </span>
                       </div>
@@ -329,14 +329,14 @@ export const ShopPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <h3 className="font-black text-slate-900 text-xs sm:text-sm line-clamp-2 group-hover:text-teal-700 transition">
+                        <h3 className="font-black text-slate-900 text-xs sm:text-sm line-clamp-2 group-hover:text-blue-600 transition">
                           {p.name}
                         </h3>
 
                         {/* Compatibility pill */}
                         <div className="text-[10px] sm:text-[11px] text-slate-600 bg-slate-100 p-1.5 sm:p-2 rounded-xl border border-slate-200">
                           <span className="text-slate-500 font-semibold hidden sm:inline">Fits: </span>
-                          <span className="text-teal-800 font-bold truncate block">
+                          <span className="text-blue-900 font-bold truncate block">
                             {p.compatibleModels.join(', ')}
                           </span>
                         </div>
@@ -352,7 +352,7 @@ export const ShopPage: React.FC = () => {
 
                       <button
                         onClick={() => addToCart(p, 1, selectedModel || p.compatibleModels[0])}
-                        className="w-full bg-gradient-to-r from-teal-700 to-teal-800 hover:from-teal-600 hover:to-teal-700 text-white font-black text-[11px] sm:text-xs py-2 sm:py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-black text-[11px] sm:text-xs py-2 sm:py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" /> Add to Cart
                       </button>

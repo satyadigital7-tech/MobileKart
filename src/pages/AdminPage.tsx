@@ -187,43 +187,43 @@ export const AdminPage: React.FC = () => {
         <div className="flex items-center gap-2 text-xs font-extrabold bg-white p-2 rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'overview' ? 'bg-teal-700 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'overview' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Overview Metrics
           </button>
           <button
             onClick={() => setActiveTab('repairs')}
-            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'repairs' ? 'bg-teal-700 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'repairs' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Repair Bookings ({repairBookings.length})
           </button>
           <button
             onClick={() => setActiveTab('products')}
-            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'products' ? 'bg-teal-700 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'products' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Product Catalog ({products.length})
           </button>
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'orders' ? 'bg-teal-700 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'orders' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Orders ({orders.length})
           </button>
           <button
             onClick={() => setActiveTab('areas')}
-            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'areas' ? 'bg-teal-700 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'areas' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Service Pincodes ({serviceAreas.length})
           </button>
           <button
             onClick={() => setActiveTab('coupons')}
-            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'coupons' ? 'bg-teal-700 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'coupons' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Coupons ({coupons.length})
           </button>
           <button
             onClick={() => setActiveTab('banner')}
-            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'banner' ? 'bg-teal-700 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'banner' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Site Announcement UI
           </button>

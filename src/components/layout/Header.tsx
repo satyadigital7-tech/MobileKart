@@ -61,22 +61,22 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-teal-800 via-teal-900 to-amber-900 text-white text-xs py-2 px-4">
+      <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-blue-900 text-white text-xs py-2 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
-              <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> HYDERABAD SPECIALIST
+            <span className="inline-flex items-center gap-1 bg-blue-500/30 text-sky-200 border border-sky-400/30 px-2 py-0.5 rounded-full text-[10px] font-bold">
+              <Sparkles className="w-3 h-3 text-sky-300 animate-pulse" /> HYDERABAD SPECIALIST
             </span>
             <span>{announcementBanner}</span>
           </div>
 
           <div className="flex items-center gap-4 text-slate-100 text-[11px]">
-            <span className="flex items-center gap-1 text-teal-200">
-              <ShieldCheck className="w-3.5 h-3.5" /> 90-Day Warranty
+            <span className="flex items-center gap-1 text-sky-300">
+              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> 90-Day Warranty
             </span>
-            <span className="hidden md:inline text-white/40">|</span>
+            <span className="hidden md:inline text-white/30">|</span>
             <span className="flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-amber-300" /> Madhapur Lab & Doorstep
+              <MapPin className="w-3.5 h-3.5 text-sky-400" /> Madhapur Lab & Doorstep
             </span>
           </div>
         </div>
@@ -238,12 +238,12 @@ export const Header: React.FC = () => {
 
           <Link
             to="/cart"
-            className="flex items-center gap-2 bg-gradient-to-r from-teal-700 to-teal-800 hover:from-teal-600 hover:to-teal-700 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-md transition"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-md transition"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>Cart</span>
             {cartCount > 0 && (
-              <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-1.5 py-0.2 rounded-full">
+              <span className="bg-sky-300 text-slate-950 font-black text-[10px] px-1.5 py-0.2 rounded-full">
                 {cartCount}
               </span>
             )}
@@ -252,7 +252,7 @@ export const Header: React.FC = () => {
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 text-slate-700 hover:text-teal-700 lg:hidden"
+            className="p-2 text-slate-700 hover:text-blue-600 lg:hidden"
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -271,7 +271,7 @@ export const Header: React.FC = () => {
                   to={link.path}
                   className={`px-3.5 py-2.5 text-xs font-bold transition rounded-lg ${
                     isActive 
-                      ? 'text-teal-800 bg-teal-100/80 font-black' 
+                      ? 'text-blue-700 bg-blue-50 font-black' 
                       : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
                 >
@@ -284,9 +284,9 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-3">
             <Link
               to="/repair-booking"
-              className="text-xs font-extrabold text-amber-800 hover:text-amber-900 flex items-center gap-1.5 bg-amber-100 px-3.5 py-1.5 rounded-lg border border-amber-300 transition shadow-sm"
+              className="text-xs font-extrabold text-blue-700 hover:text-blue-800 flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 px-3.5 py-1.5 rounded-lg border border-blue-200 transition shadow-sm"
             >
-              <Wrench className="w-3.5 h-3.5 text-amber-700" /> Book Doorstep Repair
+              <Wrench className="w-3.5 h-3.5 text-blue-600" /> Book Doorstep Repair
             </Link>
           </div>
         </div>

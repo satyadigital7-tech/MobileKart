@@ -206,20 +206,20 @@ export const RepairBookingPage: React.FC = () => {
 
       {/* Progress Steps */}
       <div className="flex items-center justify-between max-w-xl mx-auto text-[10px] sm:text-xs font-black border-b border-slate-200 pb-3 sm:pb-4 gap-1 sm:gap-2">
-        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 1 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 1 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>1</span>
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 1 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 1 ? 'bg-blue-600 text-white font-black shadow-sm' : 'bg-slate-200'}`}>1</span>
           <span>Device</span>
         </div>
-        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 2 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 2 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>2</span>
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 2 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 2 ? 'bg-blue-600 text-white font-black shadow-sm' : 'bg-slate-200'}`}>2</span>
           <span>Problem</span>
         </div>
-        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 3 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 3 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>3</span>
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 3 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 3 ? 'bg-blue-600 text-white font-black shadow-sm' : 'bg-slate-200'}`}>3</span>
           <span>Location</span>
         </div>
-        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 4 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 4 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>4</span>
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 4 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 4 ? 'bg-blue-600 text-white font-black shadow-sm' : 'bg-slate-200'}`}>4</span>
           <span>Review</span>
         </div>
       </div>
@@ -244,11 +244,11 @@ export const RepairBookingPage: React.FC = () => {
                     }}
                     className={`p-3 rounded-xl border text-xs font-extrabold transition flex items-center gap-2 ${
                       selectedBrand === b.name
-                        ? 'bg-teal-100 border-teal-600 text-teal-900 shadow-sm'
+                        ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-sm'
                         : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <Smartphone className="w-4 h-4 text-teal-700" />
+                    <Smartphone className="w-4 h-4 text-blue-600" />
                     <span>{b.name}</span>
                   </button>
                 ))}
