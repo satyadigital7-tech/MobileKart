@@ -13,13 +13,13 @@ import {
   Building2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { BRANDS, REPAIR_PROBLEMS, SERVICE_AREAS, TIME_SLOTS } from '../data/mockData';
+import { BRANDS, SERVICE_AREAS, TIME_SLOTS } from '../data/mockData';
 import type { RepairCategoryType, ServiceType } from '../types';
 
 export const RepairBookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { createRepairBooking, isCustomerAuthenticated, customerUser, openCustomerAuthModal } = useApp();
+  const { createRepairBooking, isCustomerAuthenticated, customerUser, openCustomerAuthModal, repairProblems } = useApp();
 
   const paramBrand = searchParams.get('brand') || '';
   const paramModel = searchParams.get('model') || '';
@@ -73,7 +73,9 @@ export const RepairBookingPage: React.FC = () => {
   const pincodeAreaMatch = SERVICE_AREAS.find((sa) => sa.pincode === pincode.trim());
   const isPincodeSupported = pincodeAreaMatch ? pincodeAreaMatch.isSupported : false;
 
-  const currentProblem = REPAIR_PROBLEMS.find((p) => p.id === selectedProblemId) || REPAIR_PROBLEMS[0];
+  const currentProblem = (repairProblems && repairProblems.length > 0)
+    ? (repairProblems.find((p) => p.id === selectedProblemId) || repairProblems[0])
+    : { id: 'p-scr-1', categoryId: 'screen' as RepairCategoryType, title: 'Screen Replacement', description: '', estimatedPrice: 1999, estimatedTime: '45 mins', warranty: '90 Days' };
 
   const categories = [
     { type: 'screen', name: 'Screen & Display', icon: '📱' },
@@ -288,7 +290,7 @@ export const RepairBookingPage: React.FC = () => {
                   key={cat.type}
                   onClick={() => {
                     setSelectedCategory(cat.type as RepairCategoryType);
-                    const firstProb = REPAIR_PROBLEMS.find((p) => p.categoryId === cat.type);
+                    const firstProb = repairProblems.find((p) => p.categoryId === cat.type);
                     if (firstProb) setSelectedProblemId(firstProb.id);
                   }}
                   className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 ${
@@ -305,7 +307,7 @@ export const RepairBookingPage: React.FC = () => {
 
             {/* Problem checklist */}
             <div className="space-y-3">
-              {REPAIR_PROBLEMS.filter((p) => p.categoryId === selectedCategory).map((prob) => (
+              {repairProblems.filter((p) => p.categoryId === selectedCategory).map((prob) => (
                 <div
                   key={prob.id}
                   onClick={() => setSelectedProblemId(prob.id)}

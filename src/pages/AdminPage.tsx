@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { AdminLayout } from '../admin/layouts/AdminLayout';
-import type { Product, RepairStatus, RepairBooking, Coupon, ProductCategory } from '../types';
+import type { Product, RepairStatus, RepairBooking, Coupon, ProductCategory, RepairProblem, RepairCategoryType } from '../types';
 
 export const AdminPage: React.FC = () => {
   const { 
@@ -22,6 +22,10 @@ export const AdminPage: React.FC = () => {
     orders, 
     serviceAreas, 
     coupons,
+    repairProblems,
+    updateRepairProblemPrice,
+    updateRepairProblem,
+    addRepairProblem,
     announcementBanner,
     setAnnouncementBanner,
     updateRepairStatus, 
@@ -36,7 +40,7 @@ export const AdminPage: React.FC = () => {
     deleteCoupon
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'repairs' | 'products' | 'orders' | 'areas' | 'coupons' | 'banner'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'repairs' | 'services' | 'products' | 'orders' | 'areas' | 'coupons' | 'banner'>('overview');
 
   // Selected Repair Editing Modal/Inline
   const [selectedRepair, setSelectedRepair] = useState<RepairBooking | null>(null);
@@ -75,6 +79,59 @@ export const AdminPage: React.FC = () => {
   // Banner Editor State
   const [bannerInput, setBannerInput] = useState(announcementBanner);
   const [bannerSavedAlert, setBannerSavedAlert] = useState(false);
+
+  // Repair Service & Pricing Management State
+  const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+  const [editingService, setEditingService] = useState<RepairProblem | null>(null);
+  const [serviceCategoryFilter, setServiceCategoryFilter] = useState<string>('all');
+  const [quickPriceMap, setQuickPriceMap] = useState<{ [id: string]: number }>({});
+  const [savedPriceNoticeId, setSavedPriceNoticeId] = useState<string | null>(null);
+
+  // New Service Form State
+  const [newSvcTitle, setNewSvcTitle] = useState('');
+  const [newSvcCategory, setNewSvcCategory] = useState<RepairCategoryType>('screen');
+  const [newSvcDesc, setNewSvcDesc] = useState('');
+  const [newSvcPrice, setNewSvcPrice] = useState<number>(1499);
+  const [newSvcTime, setNewSvcTime] = useState('45 mins');
+  const [newSvcWarranty, setNewSvcWarranty] = useState('90 Days Warranty');
+
+  const handleQuickPriceChange = (id: string, price: number) => {
+    setQuickPriceMap((prev) => ({ ...prev, [id]: price }));
+  };
+
+  const handleSavePrice = (id: string) => {
+    const targetPrice = quickPriceMap[id];
+    if (targetPrice !== undefined && targetPrice >= 0) {
+      updateRepairProblemPrice(id, targetPrice);
+      setSavedPriceNoticeId(id);
+      setTimeout(() => setSavedPriceNoticeId(null), 2500);
+    }
+  };
+
+  const handleCreateService = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSvcTitle.trim()) return;
+    addRepairProblem({
+      categoryId: newSvcCategory,
+      title: newSvcTitle.trim(),
+      description: newSvcDesc.trim() || 'Professional doorstep mobile service by certified technician.',
+      estimatedPrice: Number(newSvcPrice),
+      estimatedTime: newSvcTime.trim() || '45 mins',
+      warranty: newSvcWarranty.trim() || '90 Days Warranty'
+    });
+    setShowAddServiceModal(false);
+    setNewSvcTitle('');
+    setNewSvcDesc('');
+    alert(`New Repair Service "${newSvcTitle}" created successfully!`);
+  };
+
+  const handleUpdateServiceModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingService) return;
+    updateRepairProblem(editingService.id, editingService);
+    setEditingService(null);
+    alert(`Repair service "${editingService.title}" updated successfully!`);
+  };
 
   // Stats Calculations
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0) + repairBookings.reduce((sum, b) => sum + (b.finalPrice || b.initialEstimatedPrice), 0);
@@ -196,6 +253,12 @@ export const AdminPage: React.FC = () => {
             className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'repairs' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Repair Bookings ({repairBookings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('services')}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'services' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+          >
+            Repair Services & Prices ({repairProblems.length})
           </button>
           <button
             onClick={() => setActiveTab('products')}
@@ -433,6 +496,320 @@ export const AdminPage: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* REPAIR SERVICES & PRICING MANAGEMENT TAB */}
+        {activeTab === 'services' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+              <div>
+                <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-blue-600" />
+                  Mobile Repair Service Prices Management
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  Directly edit repair costs, warranties, and service times. Changes immediately update across all customer estimator tools & booking flows.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowAddServiceModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-1.5 shrink-0"
+              >
+                <Plus className="w-4 h-4" /> Add Repair Service
+              </button>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap gap-2 items-center">
+              {[
+                { id: 'all', label: 'All Services' },
+                { id: 'screen', label: 'Screen & Display' },
+                { id: 'battery', label: 'Battery & Power' },
+                { id: 'charging', label: 'Charging Port' },
+                { id: 'camera', label: 'Camera & Lens' },
+                { id: 'audio', label: 'Audio & Speaker' },
+                { id: 'software', label: 'Software OS' },
+                { id: 'other', label: 'Other Diagnostics' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setServiceCategoryFilter(cat.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition ${
+                    serviceCategoryFilter === cat.id
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Services Grid/Table */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {repairProblems
+                .filter((p) => serviceCategoryFilter === 'all' || p.categoryId === serviceCategoryFilter)
+                .map((prob) => {
+                  const currentInputValue = quickPriceMap[prob.id] !== undefined ? quickPriceMap[prob.id] : prob.estimatedPrice;
+                  const isDirty = currentInputValue !== prob.estimatedPrice;
+                  const showSavedBadge = savedPriceNoticeId === prob.id;
+
+                  return (
+                    <div key={prob.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4 hover:border-blue-300 transition">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] uppercase tracking-wider font-black bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-100">
+                            {prob.categoryId}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-500">🛡️ {prob.warranty}</span>
+                        </div>
+
+                        <h4 className="font-extrabold text-slate-900 text-sm leading-snug">{prob.title}</h4>
+                        <p className="text-xs text-slate-500 line-clamp-2">{prob.description}</p>
+                        
+                        <div className="text-[11px] text-slate-600 font-semibold flex items-center gap-1.5 pt-1">
+                          <span>⏱️ Estimated Time: <strong className="text-slate-900">{prob.estimatedTime}</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Price Editing Box */}
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <label className="font-extrabold text-slate-700">Estimated Price (₹)</label>
+                          {showSavedBadge && (
+                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Updated!
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <span className="absolute left-3 top-2.5 text-slate-400 font-black text-xs">₹</span>
+                            <input
+                              type="number"
+                              value={currentInputValue}
+                              onChange={(e) => handleQuickPriceChange(prob.id, Number(e.target.value))}
+                              className="w-full bg-white border border-slate-300 rounded-xl py-2 pl-7 pr-3 text-slate-900 font-black text-sm outline-none focus:border-blue-600 shadow-inner"
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSavePrice(prob.id)}
+                            disabled={!isDirty}
+                            className={`px-3 py-2 rounded-xl text-xs font-black transition shrink-0 ${
+                              isDirty
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            }`}
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setEditingService(prob)}
+                            className="p-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl transition"
+                            title="Edit full service details"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* ADD SERVICE MODAL */}
+            {showAddServiceModal && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200 animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                      <Plus className="w-5 h-5 text-blue-600" />
+                      Add New Mobile Repair Service
+                    </h3>
+                    <button onClick={() => setShowAddServiceModal(false)} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreateService} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block text-slate-800 font-extrabold mb-1">Service Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={newSvcTitle}
+                        onChange={(e) => setNewSvcTitle(e.target.value)}
+                        placeholder="e.g. Display & Touch Glass Replacement (OLED)"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold outline-none focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1">Issue Category</label>
+                        <select
+                          value={newSvcCategory}
+                          onChange={(e) => setNewSvcCategory(e.target.value as RepairCategoryType)}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold outline-none focus:border-blue-600"
+                        >
+                          <option value="screen">Screen & Display</option>
+                          <option value="battery">Battery & Power</option>
+                          <option value="charging">Charging Port</option>
+                          <option value="camera">Camera & Lens</option>
+                          <option value="audio">Audio & Speaker</option>
+                          <option value="software">Software OS</option>
+                          <option value="other">Other Diagnostics</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1">Estimated Price (₹)</label>
+                        <input
+                          type="number"
+                          required
+                          value={newSvcPrice}
+                          onChange={(e) => setNewSvcPrice(Number(e.target.value))}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold outline-none focus:border-blue-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1">Estimated Time</label>
+                        <input
+                          type="text"
+                          value={newSvcTime}
+                          onChange={(e) => setNewSvcTime(e.target.value)}
+                          placeholder="e.g. 45 mins"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold outline-none focus:border-blue-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1">Warranty Period</label>
+                        <input
+                          type="text"
+                          value={newSvcWarranty}
+                          onChange={(e) => setNewSvcWarranty(e.target.value)}
+                          placeholder="e.g. 90 Days Warranty"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold outline-none focus:border-blue-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-extrabold mb-1">Service Description</label>
+                      <textarea
+                        rows={2}
+                        value={newSvcDesc}
+                        onChange={(e) => setNewSvcDesc(e.target.value)}
+                        placeholder="Brief summary of what this repair includes..."
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold outline-none focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-3">
+                      <button type="button" onClick={() => setShowAddServiceModal(false)} className="bg-slate-100 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs hover:bg-slate-200">
+                        Cancel
+                      </button>
+                      <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black px-4 py-2 rounded-xl text-xs shadow-sm">
+                        Create Repair Service
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* EDIT SERVICE FULL MODAL */}
+            {editingService && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200 animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                      <Edit className="w-5 h-5 text-blue-600" />
+                      Edit Repair Service Details
+                    </h3>
+                    <button onClick={() => setEditingService(null)} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleUpdateServiceModal} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block text-slate-800 font-extrabold mb-1">Service Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={editingService.title}
+                        onChange={(e) => setEditingService({ ...editingService, title: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold outline-none focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1">Price (₹)</label>
+                        <input
+                          type="number"
+                          required
+                          value={editingService.estimatedPrice}
+                          onChange={(e) => setEditingService({ ...editingService, estimatedPrice: Number(e.target.value) })}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-bold outline-none focus:border-blue-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-800 font-extrabold mb-1">Estimated Time</label>
+                        <input
+                          type="text"
+                          value={editingService.estimatedTime}
+                          onChange={(e) => setEditingService({ ...editingService, estimatedTime: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold outline-none focus:border-blue-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-extrabold mb-1">Warranty Term</label>
+                      <input
+                        type="text"
+                        value={editingService.warranty}
+                        onChange={(e) => setEditingService({ ...editingService, warranty: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold outline-none focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-extrabold mb-1">Description</label>
+                      <textarea
+                        rows={3}
+                        value={editingService.description}
+                        onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-semibold outline-none focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-3">
+                      <button type="button" onClick={() => setEditingService(null)} className="bg-slate-100 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs hover:bg-slate-200">
+                        Cancel
+                      </button>
+                      <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black px-4 py-2 rounded-xl text-xs shadow-sm">
+                        Save Service Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

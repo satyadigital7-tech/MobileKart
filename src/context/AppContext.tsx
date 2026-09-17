@@ -8,7 +8,8 @@ import type {
   TimeSlot, 
   Coupon, 
   RepairStatus,
-  CustomerUser
+  CustomerUser,
+  RepairProblem
 } from '../types';
 import { 
   INITIAL_PRODUCTS, 
@@ -16,7 +17,8 @@ import {
   INITIAL_ORDERS, 
   SERVICE_AREAS, 
   TIME_SLOTS, 
-  INITIAL_COUPONS 
+  INITIAL_COUPONS,
+  REPAIR_PROBLEMS
 } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -90,6 +92,12 @@ interface AppContextType {
   addCoupon: (coupon: Coupon) => void;
   deleteCoupon: (code: string) => void;
 
+  // Mobile Repair Services & Pricing Management
+  repairProblems: RepairProblem[];
+  updateRepairProblemPrice: (id: string, newPrice: number) => void;
+  updateRepairProblem: (id: string, updates: Partial<RepairProblem>) => void;
+  addRepairProblem: (problem: Omit<RepairProblem, 'id'>) => void;
+
   // Site Banner Announcement UI Control
   announcementBanner: string;
   setAnnouncementBanner: (banner: string) => void;
@@ -150,6 +158,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [coupons, setCoupons] = useState<Coupon[]>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.COUPONS);
     return saved ? JSON.parse(saved) : INITIAL_COUPONS;
+  });
+
+  // Repair Services & Pricing State
+  const [repairProblems, setRepairProblems] = useState<RepairProblem[]>(() => {
+    const saved = localStorage.getItem('hmc_repair_problems_v1');
+    return saved ? JSON.parse(saved) : REPAIR_PROBLEMS;
   });
 
   const [timeSlots] = useState<TimeSlot[]>(TIME_SLOTS);
@@ -363,6 +377,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.COUPONS, JSON.stringify(coupons));
   }, [coupons]);
+
+  useEffect(() => {
+    localStorage.setItem('hmc_repair_problems_v1', JSON.stringify(repairProblems));
+  }, [repairProblems]);
+
+  const updateRepairProblemPrice = (id: string, newPrice: number) => {
+    setRepairProblems((prev) =>
+      prev.map((prob) => (prob.id === id ? { ...prob, estimatedPrice: newPrice } : prob))
+    );
+  };
+
+  const updateRepairProblem = (id: string, updates: Partial<RepairProblem>) => {
+    setRepairProblems((prev) =>
+      prev.map((prob) => (prob.id === id ? { ...prob, ...updates } : prob))
+    );
+  };
+
+  const addRepairProblem = (problemData: Omit<RepairProblem, 'id'>) => {
+    const newProblem: RepairProblem = {
+      ...problemData,
+      id: `prob_${Date.now()}`
+    };
+    setRepairProblems((prev) => [...prev, newProblem]);
+  };
 
   // Cart Handlers
   const addToCart = (product: Product, quantity = 1, selectedModel?: string) => {
@@ -714,6 +752,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addServiceArea,
         addCoupon,
         deleteCoupon,
+        repairProblems,
+        updateRepairProblemPrice,
+        updateRepairProblem,
+        addRepairProblem,
         announcementBanner,
         setAnnouncementBanner,
       }}

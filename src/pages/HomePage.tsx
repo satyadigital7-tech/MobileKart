@@ -15,11 +15,11 @@ import {
   Minus
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { BRANDS, REPAIR_PROBLEMS, SAMPLE_REVIEWS } from '../data/mockData';
+import { BRANDS, SAMPLE_REVIEWS } from '../data/mockData';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { products, addToCart, setSelectedBrand, setSelectedModel } = useApp();
+  const { products, addToCart, setSelectedBrand, setSelectedModel, repairProblems } = useApp();
 
   // Quick Repair Estimator State
   const [estBrand, setEstBrand] = useState('Apple');
@@ -29,7 +29,9 @@ export const HomePage: React.FC = () => {
   // FAQ Accordion state
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const selectedProblem = REPAIR_PROBLEMS.find((p) => p.id === estProblemId) || REPAIR_PROBLEMS[0];
+  const selectedProblem = (repairProblems && repairProblems.length > 0)
+    ? (repairProblems.find((p) => p.id === estProblemId) || repairProblems[0])
+    : { title: 'Screen Repair', estimatedPrice: 1999, estimatedTime: '45 mins', warranty: '90 Days' };
 
   const categories = [
     { name: 'Mobile Covers', slug: 'mobile-covers', count: '140+ Items', icon: '📱', img: 'https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?w=400&auto=format&fit=crop&q=80' },
@@ -176,7 +178,7 @@ export const HomePage: React.FC = () => {
                     onChange={(e) => setEstProblemId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-blue-600"
                   >
-                    {REPAIR_PROBLEMS.map((p) => (
+                    {repairProblems.map((p) => (
                       <option key={p.id} value={p.id}>{p.title}</option>
                     ))}
                   </select>
