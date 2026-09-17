@@ -5,7 +5,7 @@ export const WhatsAppButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [customMsg, setCustomMsg] = useState('');
 
-  const phone = '919876543210'; // WhatsApp number
+  const phone = '919849129508'; // WhatsApp number
 
   const quickActions = [
     'Hi! I want to check screen repair price for my phone.',
