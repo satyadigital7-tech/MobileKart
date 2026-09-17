@@ -294,35 +294,106 @@ export const Header: React.FC = () => {
 
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-slate-200 p-4 space-y-3 shadow-lg">
+        <div className="lg:hidden bg-white border-b border-slate-200 p-4 space-y-4 shadow-xl animate-in slide-in-from-top duration-200">
+          {/* Customer Profile / Sign In Banner in Mobile Drawer */}
+          {isCustomerAuthenticated ? (
+            <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-800 font-extrabold flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900">{customerUser?.name}</div>
+                  <div className="text-[10px] text-slate-500 font-semibold">{customerUser?.phone}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  customerLogout();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="text-red-600 hover:bg-red-50 font-extrabold px-2.5 py-1 rounded-lg border border-red-200 text-[11px]"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                openCustomerAuthModal('account');
+              }}
+              className="w-full bg-teal-50 hover:bg-teal-100 text-teal-900 font-extrabold p-3 rounded-2xl border border-teal-200 text-xs flex items-center justify-center gap-2 transition"
+            >
+              <User className="w-4 h-4 text-teal-700" />
+              <span>Sign In / Create MobileKart Account</span>
+            </button>
+          )}
+
+          {/* Search Bar in Mobile */}
           <form onSubmit={handleSearchSubmit} className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products or repairs..."
-              className="w-full bg-slate-100 border border-slate-300 text-slate-900 text-xs rounded-xl py-2.5 pl-9 pr-4 outline-none"
+              placeholder="Search iPhone case, battery, repair..."
+              className="w-full bg-slate-100 border border-slate-300 text-slate-900 text-xs rounded-xl py-2.5 pl-9 pr-4 outline-none focus:border-teal-700 focus:bg-white"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           </form>
 
-          <nav className="flex flex-col space-y-1 pt-2">
+          {/* Navigation Links */}
+          <nav className="flex flex-col space-y-1.5">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                className="px-3.5 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition flex items-center justify-between"
               >
-                {link.name}
+                <span>{link.name}</span>
+                <ChevronDown className="w-3.5 h-3.5 -rotate-90 text-slate-400" />
               </Link>
             ))}
+
+            {isCustomerAuthenticated && (
+              <>
+                <Link
+                  to="/account?tab=repairs"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3.5 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition"
+                >
+                  🔧 My Repair Bookings
+                </Link>
+                <Link
+                  to="/account?tab=orders"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3.5 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition"
+                >
+                  🛍️ My Orders
+                </Link>
+              </>
+            )}
+
+            <Link
+              to="/account?tab=wishlist"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="px-3.5 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition flex justify-between"
+            >
+              <span>❤️ My Wishlist</span>
+              {wishlist.length > 0 && (
+                <span className="bg-amber-500 text-white font-bold text-[10px] px-2 py-0.5 rounded-full">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
+
             <Link
               to="/repair-booking"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="px-3 py-2 text-sm font-extrabold text-amber-900 bg-amber-100 rounded-lg"
+              className="px-3.5 py-3 text-xs font-black text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl border border-amber-300 transition text-center shadow-sm flex items-center justify-center gap-2 mt-2"
             >
-              🔧 Book Mobile Repair
+              <Wrench className="w-4 h-4 text-amber-800" /> Book Doorstep Repair Now
             </Link>
           </nav>
         </div>

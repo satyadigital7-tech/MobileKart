@@ -205,21 +205,21 @@ export const RepairBookingPage: React.FC = () => {
       </div>
 
       {/* Progress Steps */}
-      <div className="flex items-center justify-between max-w-xl mx-auto text-xs font-black border-b border-slate-200 pb-4">
-        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>1</span>
+      <div className="flex items-center justify-between max-w-xl mx-auto text-[10px] sm:text-xs font-black border-b border-slate-200 pb-3 sm:pb-4 gap-1 sm:gap-2">
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 1 ? 'text-teal-800' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 1 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>1</span>
           <span>Device</span>
         </div>
-        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>2</span>
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 2 ? 'text-teal-800' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 2 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>2</span>
           <span>Problem</span>
         </div>
-        <div className={`flex items-center gap-2 ${step >= 3 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>3</span>
-          <span>Location & Time</span>
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 3 ? 'text-teal-800' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 3 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>3</span>
+          <span>Location</span>
         </div>
-        <div className={`flex items-center gap-2 ${step >= 4 ? 'text-teal-800' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 4 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>4</span>
+        <div className={`flex items-center gap-1 sm:gap-2 ${step >= 4 ? 'text-teal-800' : 'text-slate-400'}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs ${step >= 4 ? 'bg-teal-100 border border-teal-500 font-black' : 'bg-slate-200'}`}>4</span>
           <span>Review</span>
         </div>
       </div>
