@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BRANDS, SAMPLE_REVIEWS } from '../data/mockData';
+import { VistaShieldSection } from '../components/VistaShieldSection';
+import { PersonalCarePassSection } from '../components/PersonalCarePassSection';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -204,6 +206,12 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* MobileKart Vista Shield - Powered by OneAssist */}
+      <VistaShieldSection />
+
+      {/* Personal Care Pass */}
+      <PersonalCarePassSection />
 
       {/* Brand Selector Bar */}
       <section className="max-w-7xl mx-auto px-4">

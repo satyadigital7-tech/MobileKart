@@ -15,11 +15,20 @@ import {
 import { useApp } from '../context/AppContext';
 import { BRANDS, SERVICE_AREAS, TIME_SLOTS } from '../data/mockData';
 import type { RepairCategoryType, ServiceType } from '../types';
+import { VistaShieldSection } from '../components/VistaShieldSection';
 
 export const RepairBookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { createRepairBooking, isCustomerAuthenticated, customerUser, openCustomerAuthModal, repairProblems } = useApp();
+  const { 
+    createRepairBooking, 
+    isCustomerAuthenticated, 
+    customerUser, 
+    openCustomerAuthModal, 
+    repairProblems,
+    selectedVistaShieldPlan,
+    clearSelectedVistaShieldPlan
+  } = useApp();
 
   const paramBrand = searchParams.get('brand') || '';
   const paramModel = searchParams.get('model') || '';
@@ -602,16 +611,62 @@ export const RepairBookingPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Selected Vista Shield Protection Plan Card */}
+              {selectedVistaShieldPlan && (
+                <div className="bg-[#123477] text-white p-4 rounded-xl border-2 border-[#C9A646] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#C9A646] animate-pulse"></span>
+                      <span className="text-xs font-black text-[#C9A646] uppercase tracking-wider">
+                        MobileKart Vista Shield – Powered by OneAssist
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearSelectedVistaShieldPlan}
+                      className="text-[10px] text-amber-300 hover:text-white font-bold underline"
+                    >
+                      Remove Plan
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-white/10">
+                    <div>
+                      <div className="text-xs font-extrabold text-white">
+                        {selectedVistaShieldPlan.variantName} Screen Protection Plan
+                      </div>
+                      <div className="text-[11px] text-slate-200">
+                        Maximum Benefit: <strong className="text-[#C9A646]">₹{selectedVistaShieldPlan.maxBenefit.toLocaleString()}/-</strong>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base font-black text-[#C9A646]">
+                        ₹{selectedVistaShieldPlan.mrp.toLocaleString()}
+                      </div>
+                      <div className="text-[10px] text-slate-300 font-bold">
+                        MRP (Incl. of GST)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
                 <div>
                   <div className="text-xs text-slate-500 font-bold">Estimated Total Cost:</div>
-                  <div className="text-2xl font-black text-slate-900">₹{currentProblem.estimatedPrice}</div>
-                  <div className="text-[10px] text-slate-500">Pay after repair completion</div>
+                  <div className="text-2xl font-black text-slate-900">
+                    ₹{currentProblem.estimatedPrice + (selectedVistaShieldPlan ? selectedVistaShieldPlan.mrp : 0)}
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    {selectedVistaShieldPlan ? `Repair (₹${currentProblem.estimatedPrice}) + Vista Shield (₹${selectedVistaShieldPlan.mrp})` : 'Pay after repair completion'}
+                  </div>
                 </div>
 
                 <div className="text-right text-[11px] text-teal-800 font-bold">
                   ✓ Includes Technician Visit <br />
                   ✓ Includes Original Spares
+                  {selectedVistaShieldPlan && <br />}
+                  {selectedVistaShieldPlan && <span className="text-[#123477]">✓ 1-Yr Screen Shield Included</span>}
                 </div>
               </div>
             </div>
@@ -634,6 +689,11 @@ export const RepairBookingPage: React.FC = () => {
             </div>
           </form>
         )}
+      </div>
+
+      {/* Embedded Vista Shield Section for Quick Selection */}
+      <div className="pt-8">
+        <VistaShieldSection showBookingRedirect={false} />
       </div>
     </div>
   );

@@ -187,3 +187,111 @@ INSERT INTO public.coupons (code, discount_type, discount_value, min_order_amoun
 ('WELCOME100', 'fixed', 100, 499, '₹100 Off on your first order', true),
 ('HYDREPAIR', 'percentage', 15, 999, '15% Off on doorstep repair bookings', true)
 ON CONFLICT (code) DO NOTHING;
+
+-- 8. VISTA SHIELD CONFIG TABLE
+CREATE TABLE IF NOT EXISTS public.vista_shield_config (
+    id VARCHAR(50) PRIMARY KEY DEFAULT 'default',
+    is_enabled BOOLEAN DEFAULT TRUE,
+    section_title VARCHAR(255) DEFAULT 'MobileKart Vista Shield – Powered by OneAssist',
+    subtitle VARCHAR(255) DEFAULT 'Know Your Plan Better',
+    v1_price NUMERIC(10, 2) DEFAULT 1798,
+    v1_max_benefit NUMERIC(10, 2) DEFAULT 10000,
+    v1_badge VARCHAR(100) DEFAULT 'MOST POPULAR',
+    v2_price NUMERIC(10, 2) DEFAULT 1598,
+    v2_max_benefit NUMERIC(10, 2) DEFAULT 7500,
+    tenure VARCHAR(100) DEFAULT '1 Year from date of purchase',
+    excess_fees VARCHAR(100) DEFAULT '₹199/-',
+    cooling_period VARCHAR(100) DEFAULT '15 Days',
+    service_requests_count VARCHAR(50) DEFAULT '1',
+    authorized_service_center TEXT DEFAULT 'OneAssist Authorized Service Center / MobileKart',
+    product_name TEXT DEFAULT 'Existing Phone Screen Protection Plan',
+    service_benefit TEXT DEFAULT 'Screen Protection',
+    trust_line_title VARCHAR(100) DEFAULT 'Trust Line',
+    trust_line_text TEXT DEFAULT 'After booking your plan, always verify the policy document directly through the official OneAssist App.',
+    trust_line_highlight VARCHAR(100) DEFAULT '100% Official & Secure.',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.vista_shield_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Vista Shield Config" ON public.vista_shield_config FOR SELECT USING (true);
+CREATE POLICY "Admin All Vista Shield Config" ON public.vista_shield_config FOR ALL USING (true);
+
+INSERT INTO public.vista_shield_config (id, is_enabled, section_title, subtitle, v1_price, v1_max_benefit, v2_price, v2_max_benefit)
+VALUES ('default', true, 'MobileKart Vista Shield – Powered by OneAssist', 'Know Your Plan Better', 1798, 10000, 1598, 7500)
+ON CONFLICT (id) DO NOTHING;
+
+-- 9. CART ITEMS TABLE (ISOLATED PER AUTHENTICATED USER ID)
+CREATE TABLE IF NOT EXISTS public.cart_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    product_id VARCHAR(50) NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    quantity INT NOT NULL DEFAULT 1 CHECK (quantity > 0),
+    selected_model VARCHAR(100) DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, product_id, selected_model)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON public.cart_items(user_id);
+
+ALTER TABLE public.cart_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own cart"
+ON public.cart_items FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can add to their own cart"
+ON public.cart_items FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own cart"
+ON public.cart_items FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own cart"
+ON public.cart_items FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view all customer carts"
+ON public.cart_items FOR SELECT TO authenticated
+USING (true);
+
+-- 10. PROFILES TABLE (STRICT USER IDENTITY & PROFILE)
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    email VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'Customer',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Unique index on phone number to enforce 1 account per mobile at the database level (PRD Req #12)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_profile_phone
+ON public.profiles (phone)
+WHERE phone IS NOT NULL AND phone != '';
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own profile"
+ON public.profiles FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own profile"
+ON public.profiles FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own profile"
+ON public.profiles FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view all profiles"
+ON public.profiles FOR SELECT TO authenticated
+USING (true);
+
+
+

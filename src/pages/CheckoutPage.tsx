@@ -12,7 +12,15 @@ import { SERVICE_AREAS } from '../data/mockData';
 
 export const CheckoutPage: React.FC = () => {
   const location = useLocation();
-  const { cart, placeOrder, customerUser, isCustomerAuthenticated, openCustomerAuthModal } = useApp();
+  const { 
+    cart, 
+    placeOrder, 
+    customerUser, 
+    isCustomerAuthenticated, 
+    openCustomerAuthModal,
+    selectedVistaShieldPlan,
+    clearSelectedVistaShieldPlan
+  } = useApp();
 
   const extraState = location.state || {};
   const discount = extraState.discount || 0;
@@ -42,8 +50,9 @@ export const CheckoutPage: React.FC = () => {
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
 
   const subtotal = cart.reduce((sum, item) => sum + item.product.discountPrice * item.quantity, 0);
-  const deliveryCharge = subtotal > 499 || cart.length === 0 ? 0 : 49;
-  const total = Math.max(0, subtotal - discount + deliveryCharge);
+  const vistaShieldPrice = selectedVistaShieldPlan ? selectedVistaShieldPlan.mrp : 0;
+  const deliveryCharge = (subtotal + vistaShieldPrice) > 499 || cart.length === 0 ? 0 : 49;
+  const total = Math.max(0, subtotal + vistaShieldPrice - discount + deliveryCharge);
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -318,6 +327,32 @@ export const CheckoutPage: React.FC = () => {
                   <div className="font-extrabold text-amber-700">₹{item.product.discountPrice * item.quantity}</div>
                 </div>
               ))}
+
+              {selectedVistaShieldPlan && (
+                <div className="p-3 bg-[#123477] text-white rounded-xl border border-[#C9A646] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-[#C9A646] uppercase">
+                      MobileKart Vista Shield – Powered by OneAssist
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearSelectedVistaShieldPlan}
+                      className="text-[10px] text-amber-300 underline font-bold"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <div>
+                      <div className="font-bold">{selectedVistaShieldPlan.variantName} Screen Protection</div>
+                      <div className="text-[10px] text-slate-200">Max Benefit: ₹{selectedVistaShieldPlan.maxBenefit.toLocaleString()}/-</div>
+                    </div>
+                    <div className="font-black text-[#C9A646]">
+                      ₹{selectedVistaShieldPlan.mrp.toLocaleString()} <span className="text-[9px] font-normal text-slate-300">(Incl. GST)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 text-xs pt-4 border-t border-slate-200 font-semibold">

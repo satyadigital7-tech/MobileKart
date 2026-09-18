@@ -9,7 +9,9 @@ import type {
   Coupon, 
   RepairStatus,
   CustomerUser,
-  RepairProblem
+  RepairProblem,
+  VistaShieldConfig,
+  SelectedVistaShieldPlan
 } from '../types';
 import { 
   INITIAL_PRODUCTS, 
@@ -18,9 +20,11 @@ import {
   SERVICE_AREAS, 
   TIME_SLOTS, 
   INITIAL_COUPONS,
-  REPAIR_PROBLEMS
+  REPAIR_PROBLEMS,
+  INITIAL_VISTA_SHIELD_CONFIG
 } from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { normalizePhoneNumber } from '../utils/phone';
 
 interface AdminUser {
   email: string;
@@ -45,12 +49,13 @@ interface AppContextType {
   // Customer Auth State
   isCustomerAuthenticated: boolean;
   customerUser: CustomerUser | null;
+  registeredUsers: CustomerUser[];
   isAuthModalOpen: boolean;
   authModalContext: 'repair' | 'checkout' | 'account' | null;
   openCustomerAuthModal: (contextAction?: 'repair' | 'checkout' | 'account') => void;
   closeCustomerAuthModal: () => void;
-  customerLogin: (emailOrPhone: string, pass: string, name?: string) => Promise<boolean> | boolean;
-  customerSignup: (name: string, email: string, phone: string, pass: string) => Promise<boolean> | boolean;
+  customerLogin: (emailOrPhone: string, pass: string, name?: string) => { success: boolean; error?: string; message?: string };
+  customerSignup: (name: string, email: string, phone: string, pass: string) => { success: boolean; error?: string; message?: string };
   customerLogout: () => void;
 
   // Admin Auth State
@@ -66,8 +71,8 @@ interface AppContextType {
   
   // Cart & Wishlist
   addToCart: (product: Product, quantity?: number, selectedModel?: string) => void;
-  removeFromCart: (productId: string) => void;
-  updateCartQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string, selectedModel?: string) => void;
+  updateCartQuantity: (productId: string, quantity: number, selectedModel?: string) => void;
   clearCart: () => void;
   toggleWishlist: (productId: string) => void;
   
@@ -101,6 +106,13 @@ interface AppContextType {
   // Site Banner Announcement UI Control
   announcementBanner: string;
   setAnnouncementBanner: (banner: string) => void;
+
+  // Vista Shield Insurance / Plan State & Actions
+  vistaShieldConfig: VistaShieldConfig;
+  updateVistaShieldConfig: (updates: Partial<VistaShieldConfig>) => void;
+  selectedVistaShieldPlan: SelectedVistaShieldPlan;
+  selectVistaShieldPlan: (variantId: 'variant-1' | 'variant-2') => void;
+  clearSelectedVistaShieldPlan: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -109,13 +121,18 @@ const LOCAL_STORAGE_KEYS = {
   PRODUCTS: 'hmc_products_v1',
   REPAIRS: 'hmc_repairs_v1',
   ORDERS: 'hmc_orders_v1',
-  CART: 'hmc_cart_v1',
+  GUEST_CART: 'hmc_guest_cart_v1',
   WISHLIST: 'hmc_wishlist_v1',
   SERVICE_AREAS: 'hmc_areas_v1',
   COUPONS: 'hmc_coupons_v1',
   ADMIN_AUTH: 'hmc_admin_auth_v2',
   CUSTOMER_AUTH: 'hmc_customer_auth_v1',
+  REGISTERED_USERS: 'hmc_registered_users_v2',
+  VISTA_SHIELD_CONFIG: 'hmc_vista_shield_config_v1',
+  SELECTED_VISTA_SHIELD: 'hmc_selected_vista_shield_v1',
 };
+
+const getUserCartKey = (userId: string) => `hmc_user_cart_${userId}`;
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Products State
@@ -136,11 +153,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_ORDERS;
   });
 
-  // Cart State
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CART);
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Cart State (User Isolated)
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   // Wishlist State
   const [wishlist, setWishlist] = useState<string[]>(() => {
@@ -166,6 +180,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : REPAIR_PROBLEMS;
   });
 
+  // Vista Shield Config State
+  const [vistaShieldConfig, setVistaShieldConfig] = useState<VistaShieldConfig>(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.VISTA_SHIELD_CONFIG);
+    return saved ? JSON.parse(saved) : INITIAL_VISTA_SHIELD_CONFIG;
+  });
+
+  // Selected Vista Shield Plan State
+  const [selectedVistaShieldPlan, setSelectedVistaShieldPlan] = useState<SelectedVistaShieldPlan>(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.SELECTED_VISTA_SHIELD);
+    return saved ? JSON.parse(saved) : null;
+  });
+
+
   const [timeSlots] = useState<TimeSlot[]>(TIME_SLOTS);
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
@@ -177,10 +204,138 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : null;
   });
 
+  // Registered Users Registry State (Prevents account linking by phone)
+  const [registeredUsers, setRegisteredUsers] = useState<CustomerUser[]>(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.REGISTERED_USERS);
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'usr_kiran_kumar_default',
+        name: 'Kiran Kumar',
+        email: 'kiran@hyderabad.in',
+        phone: '+919849012345',
+        normalizedPhone: '+919849012345',
+        role: 'Customer',
+        createdAt: '2026-01-15T10:00:00.000Z',
+        address: {
+          houseNumber: 'Flat 402',
+          street: 'Road No 36, Jubilee Hills',
+          area: 'Madhapur',
+          city: 'Hyderabad',
+          pincode: '500081'
+        }
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.REGISTERED_USERS, JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalContext, setAuthModalContext] = useState<'repair' | 'checkout' | 'account' | null>(null);
 
   const isCustomerAuthenticated = !!customerUser;
+
+  // Helper: Load cart for specific user ID or guest
+  const loadUserCart = async (userId: string | null) => {
+    if (!userId) {
+      // Guest Cart
+      const savedGuest = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CART);
+      const parsedGuest = savedGuest ? JSON.parse(savedGuest) : [];
+      setCart(parsedGuest);
+      return;
+    }
+
+    // Authenticated User Cart: ALWAYS clear current state first to prevent bleed-through
+    setCart([]);
+
+    const userCartKey = getUserCartKey(userId);
+    const savedUserCart = localStorage.getItem(userCartKey);
+    let userCart: CartItem[] = savedUserCart ? JSON.parse(savedUserCart) : [];
+
+    // Query Supabase cart_items for current user_id
+    if (isSupabaseConfigured) {
+      try {
+        const { data: remoteCartItems, error } = await supabase
+          .from('cart_items')
+          .select('*, products(*)')
+          .eq('user_id', userId);
+
+        if (!error && remoteCartItems && remoteCartItems.length > 0) {
+          const mappedRemoteCart: CartItem[] = remoteCartItems
+            .map((item) => {
+              const prod = products.find((p) => p.id === item.product_id) || item.products;
+              if (!prod) return null;
+              return {
+                id: item.id,
+                userId: item.user_id,
+                product: prod,
+                quantity: item.quantity,
+                selectedModel: item.selected_model || ''
+              };
+            })
+            .filter(Boolean) as CartItem[];
+
+          userCart = mappedRemoteCart;
+          localStorage.setItem(userCartKey, JSON.stringify(mappedRemoteCart));
+        }
+      } catch (err) {
+        console.warn('Supabase user cart load notice:', err);
+      }
+    }
+
+    // Handle Guest Cart Migration if guest items exist
+    const savedGuest = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CART);
+    if (savedGuest) {
+      try {
+        const guestItems: CartItem[] = JSON.parse(savedGuest);
+        if (guestItems && guestItems.length > 0) {
+          const merged = [...userCart];
+          guestItems.forEach((gItem) => {
+            const existingIdx = merged.findIndex(
+              (m) => m.product.id === gItem.product.id && m.selectedModel === gItem.selectedModel
+            );
+            if (existingIdx > -1) {
+              merged[existingIdx].quantity += gItem.quantity;
+            } else {
+              merged.push({ ...gItem, userId });
+            }
+          });
+          userCart = merged;
+          localStorage.setItem(userCartKey, JSON.stringify(merged));
+          localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CART);
+
+          if (isSupabaseConfigured) {
+            const upsertItems = userCart.map((ci) => ({
+              user_id: userId,
+              product_id: ci.product.id,
+              quantity: ci.quantity,
+              selected_model: ci.selectedModel || '',
+              updated_at: new Date().toISOString()
+            }));
+            supabase.from('cart_items').upsert(upsertItems).then(({ error }) => {
+              if (error) console.warn('Supabase guest cart migration notice:', error.message);
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Guest cart migration notice:', err);
+      }
+    }
+
+    setCart(userCart);
+  };
+
+  // Sync cart whenever active customerUser.id changes
+  useEffect(() => {
+    localStorage.removeItem('hmc_cart_v1');
+    if (customerUser?.id) {
+      loadUserCart(customerUser.id);
+    } else {
+      loadUserCart(null);
+    }
+  }, [customerUser?.id]);
 
   const openCustomerAuthModal = (contextAction?: 'repair' | 'checkout' | 'account') => {
     if (contextAction) setAuthModalContext(contextAction);
@@ -191,31 +346,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAuthModalOpen(false);
   };
 
-  const customerLogin = (emailOrPhone: string, _pass: string, name?: string): boolean => {
-    const user: CustomerUser = {
-      id: `cust_${Date.now()}`,
-      name: name || 'Kiran Kumar',
-      email: emailOrPhone.includes('@') ? emailOrPhone : `${emailOrPhone}@hyderabad.in`,
-      phone: emailOrPhone.match(/^[0-9]+$/) ? emailOrPhone : '+91 98490 12345',
-      address: {
-        houseNumber: 'Flat 402',
-        street: 'Road No 36, Jubilee Hills',
-        area: 'Madhapur',
-        city: 'Hyderabad',
-        pincode: '500081'
-      }
-    };
-    setCustomerUser(user);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CUSTOMER_AUTH, JSON.stringify(user));
-    return true;
+  const customerLogin = (emailOrPhone: string, _pass: string, name?: string): { success: boolean; error?: string; message?: string } => {
+    setCart([]);
+    const inputClean = emailOrPhone.trim();
+    const isEmail = inputClean.includes('@');
+    const normPhone = !isEmail ? normalizePhoneNumber(inputClean) : '';
+    const normEmail = isEmail ? inputClean.toLowerCase() : '';
+
+    // Search existing registered account by phone or email
+    let existingUser = registeredUsers.find((u) => {
+      if (isEmail) return u.email.toLowerCase() === normEmail;
+      return (normPhone && u.normalizedPhone === normPhone) || u.phone === inputClean;
+    });
+
+    if (!existingUser) {
+      // If logging in for the first time without prior signup, register this new identity
+      const uniqueUserId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      existingUser = {
+        id: uniqueUserId,
+        name: name || (isEmail ? inputClean.split('@')[0] : 'Customer User'),
+        email: isEmail ? normEmail : `${inputClean}@hyderabad.in`,
+        phone: isEmail ? '+919849012345' : (normPhone || inputClean),
+        normalizedPhone: normPhone || (!isEmail ? normalizePhoneNumber(inputClean) : ''),
+        role: 'Customer',
+        createdAt: new Date().toISOString(),
+        address: {
+          houseNumber: 'Flat 402',
+          street: 'Road No 36',
+          area: 'Madhapur',
+          city: 'Hyderabad',
+          pincode: '500081'
+        }
+      };
+      setRegisteredUsers((prev) => [...prev, existingUser!]);
+    }
+
+    setCustomerUser(existingUser);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CUSTOMER_AUTH, JSON.stringify(existingUser));
+    loadUserCart(existingUser.id);
+    return { success: true };
   };
 
-  const customerSignup = (name: string, email: string, phone: string, _pass: string): boolean => {
-    const user: CustomerUser = {
-      id: `cust_${Date.now()}`,
+  const customerSignup = (name: string, email: string, phone: string, _pass: string): { success: boolean; error?: string; message?: string } => {
+    setCart([]);
+    const normPhone = normalizePhoneNumber(phone);
+    const normEmail = (email || `${phone}@hyderabad.in`).trim().toLowerCase();
+
+    // STRICT CHECK: Prevent duplicate mobile registration or automatic account linking
+    const existingByPhone = normPhone ? registeredUsers.find((u) => u.normalizedPhone === normPhone || u.phone === normPhone) : null;
+    const existingByEmail = normEmail ? registeredUsers.find((u) => u.email.toLowerCase() === normEmail) : null;
+
+    if (existingByPhone) {
+      return {
+        success: false,
+        error: 'PHONE_ALREADY_REGISTERED',
+        message: 'This mobile number is already registered. Please log in to your existing account instead.'
+      };
+    }
+
+    if (existingByEmail) {
+      return {
+        success: false,
+        error: 'EMAIL_ALREADY_REGISTERED',
+        message: 'An account with this email address already exists. Please log in instead.'
+      };
+    }
+
+    // Create a NEW unique user_id (Never inherit or link existing user_id)
+    const uniqueUserId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newUser: CustomerUser = {
+      id: uniqueUserId,
       name: name || 'Customer',
-      email: email || 'customer@hyderabad.in',
-      phone: phone || '+91 98490 12345',
+      email: normEmail,
+      phone: normPhone || phone || '+919849012345',
+      normalizedPhone: normPhone,
+      role: 'Customer',
+      createdAt: new Date().toISOString(),
       address: {
         houseNumber: '',
         street: '',
@@ -224,14 +430,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         pincode: '500081'
       }
     };
-    setCustomerUser(user);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CUSTOMER_AUTH, JSON.stringify(user));
-    return true;
+
+    setRegisteredUsers((prev) => [...prev, newUser]);
+    setCustomerUser(newUser);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CUSTOMER_AUTH, JSON.stringify(newUser));
+    loadUserCart(newUser.id);
+    return { success: true };
   };
 
   const customerLogout = () => {
+    setCart([]);
     setCustomerUser(null);
     localStorage.removeItem(LOCAL_STORAGE_KEYS.CUSTOMER_AUTH);
+    if (isSupabaseConfigured) {
+      supabase.auth.signOut().catch(() => {});
+    }
   };
 
   // Admin Auth State
@@ -312,6 +525,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }));
           setRepairBookings(mappedRepairs);
         }
+
+        const { data: remoteVs, error: vsErr } = await supabase.from('vista_shield_config').select('*').single();
+        if (!vsErr && remoteVs) {
+          setVistaShieldConfig({
+            isEnabled: remoteVs.is_enabled ?? true,
+            sectionTitle: remoteVs.section_title || 'MobileKart Vista Shield – Powered by OneAssist',
+            poweredBy: 'POWERED BY ONEASSIST',
+            subtitle: remoteVs.subtitle || 'Know Your Plan Better',
+            tenure: remoteVs.tenure || '1 Year from date of purchase',
+            productName: remoteVs.product_name || 'Existing Phone Screen Protection Plan',
+            serviceBenefit: remoteVs.service_benefit || 'Screen Protection',
+            serviceRequestsCount: remoteVs.service_requests_count || '1',
+            freeDoorstepPickupDrop: true,
+            authorizedServiceCenter: remoteVs.authorized_service_center || 'OneAssist Authorized Service Center / MobileKart',
+            excessFees: remoteVs.excess_fees || '₹199/-',
+            coolingPeriod: remoteVs.cooling_period || '15 Days',
+            v1Price: Number(remoteVs.v1_price || 1798),
+            v1MaxBenefit: Number(remoteVs.v1_max_benefit || 10000),
+            v1Badge: remoteVs.v1_badge || 'MOST POPULAR',
+            v2Price: Number(remoteVs.v2_price || 1598),
+            v2MaxBenefit: Number(remoteVs.v2_max_benefit || 7500),
+            trustLineTitle: remoteVs.trust_line_title || 'Trust Line',
+            trustLineText: remoteVs.trust_line_text || 'After booking your plan, always verify the policy document directly through the official OneAssist App.',
+            trustLineHighlight: remoteVs.trust_line_highlight || '100% Official & Secure.'
+          });
+        }
       } catch (err) {
         console.warn('Supabase fetch notice:', err);
       }
@@ -362,9 +601,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(orders));
   }, [orders]);
 
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CART, JSON.stringify(cart));
-  }, [cart]);
+  // Cart Handlers (User Isolated)
+  const saveCartForCurrentContext = (updatedCart: CartItem[]) => {
+    setCart(updatedCart);
+    if (customerUser?.id) {
+      const userKey = getUserCartKey(customerUser.id);
+      localStorage.setItem(userKey, JSON.stringify(updatedCart));
+
+      if (isSupabaseConfigured) {
+        const upsertData = updatedCart.map((ci) => ({
+          user_id: customerUser.id,
+          product_id: ci.product.id,
+          quantity: ci.quantity,
+          selected_model: ci.selectedModel || '',
+          updated_at: new Date().toISOString()
+        }));
+
+        if (upsertData.length > 0) {
+          supabase.from('cart_items').upsert(upsertData).then(({ error }) => {
+            if (error) console.warn('Supabase cart_items upsert notice:', error.message);
+          });
+        }
+      }
+    } else {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_CART, JSON.stringify(updatedCart));
+    }
+  };
+
+  const addToCart = (product: Product, quantity = 1, selectedModel?: string) => {
+    const modelToUse = selectedModel || product.compatibleModels?.[0] || '';
+    const existingIndex = cart.findIndex(
+      (item) => item.product.id === product.id && item.selectedModel === modelToUse
+    );
+
+    let updatedCart: CartItem[];
+    if (existingIndex > -1) {
+      updatedCart = [...cart];
+      updatedCart[existingIndex].quantity += quantity;
+    } else {
+      updatedCart = [...cart, { product, quantity, selectedModel: modelToUse, userId: customerUser?.id }];
+    }
+
+    saveCartForCurrentContext(updatedCart);
+  };
+
+  const removeFromCart = (productId: string, selectedModel?: string) => {
+    const updatedCart = cart.filter(
+      (item) => !(item.product.id === productId && (selectedModel ? item.selectedModel === selectedModel : true))
+    );
+
+    saveCartForCurrentContext(updatedCart);
+
+    if (customerUser?.id && isSupabaseConfigured) {
+      let query = supabase.from('cart_items').delete().eq('user_id', customerUser.id).eq('product_id', productId);
+      if (selectedModel) {
+        query = query.eq('selected_model', selectedModel);
+      }
+      query.then(({ error }) => {
+        if (error) console.warn('Supabase delete cart item notice:', error.message);
+      });
+    }
+  };
+
+  const updateCartQuantity = (productId: string, quantity: number, selectedModel?: string) => {
+    if (quantity <= 0) {
+      removeFromCart(productId, selectedModel);
+      return;
+    }
+
+    const updatedCart = cart.map((item) => {
+      if (item.product.id === productId && (selectedModel ? item.selectedModel === selectedModel : true)) {
+        return { ...item, quantity };
+      }
+      return item;
+    });
+
+    saveCartForCurrentContext(updatedCart);
+
+    if (customerUser?.id && isSupabaseConfigured) {
+      let query = supabase
+        .from('cart_items')
+        .update({ quantity, updated_at: new Date().toISOString() })
+        .eq('user_id', customerUser.id)
+        .eq('product_id', productId);
+
+      if (selectedModel) {
+        query = query.eq('selected_model', selectedModel);
+      }
+      query.then(({ error }) => {
+        if (error) console.warn('Supabase update cart item notice:', error.message);
+      });
+    }
+  };
+
+  const clearCart = () => {
+    setCart([]);
+    if (customerUser?.id) {
+      const userKey = getUserCartKey(customerUser.id);
+      localStorage.setItem(userKey, JSON.stringify([]));
+
+      if (isSupabaseConfigured) {
+        supabase.from('cart_items').delete().eq('user_id', customerUser.id).then(({ error }) => {
+          if (error) console.warn('Supabase clear cart notice:', error.message);
+        });
+      }
+    } else {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CART);
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.WISHLIST, JSON.stringify(wishlist));
@@ -381,6 +725,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('hmc_repair_problems_v1', JSON.stringify(repairProblems));
   }, [repairProblems]);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.VISTA_SHIELD_CONFIG, JSON.stringify(vistaShieldConfig));
+  }, [vistaShieldConfig]);
+
+  useEffect(() => {
+    if (selectedVistaShieldPlan) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SELECTED_VISTA_SHIELD, JSON.stringify(selectedVistaShieldPlan));
+    } else {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.SELECTED_VISTA_SHIELD);
+    }
+  }, [selectedVistaShieldPlan]);
+
+  const updateVistaShieldConfig = (updates: Partial<VistaShieldConfig>) => {
+    setVistaShieldConfig((prev) => {
+      const updated = { ...prev, ...updates };
+      localStorage.setItem(LOCAL_STORAGE_KEYS.VISTA_SHIELD_CONFIG, JSON.stringify(updated));
+
+      if (isSupabaseConfigured) {
+        supabase.from('vista_shield_config').upsert({
+          id: 'default',
+          is_enabled: updated.isEnabled,
+          section_title: updated.sectionTitle,
+          subtitle: updated.subtitle,
+          v1_price: updated.v1Price,
+          v1_max_benefit: updated.v1MaxBenefit,
+          v1_badge: updated.v1Badge,
+          v2_price: updated.v2Price,
+          v2_max_benefit: updated.v2MaxBenefit,
+          tenure: updated.tenure,
+          excess_fees: updated.excessFees,
+          cooling_period: updated.coolingPeriod,
+          service_requests_count: updated.serviceRequestsCount,
+          authorized_service_center: updated.authorizedServiceCenter,
+          product_name: updated.productName,
+          service_benefit: updated.serviceBenefit,
+          trust_line_title: updated.trustLineTitle,
+          trust_line_text: updated.trustLineText,
+          trust_line_highlight: updated.trustLineHighlight,
+          updated_at: new Date().toISOString()
+        }).then(({ error }) => {
+          if (error) console.warn('Supabase vista_shield_config upsert notice:', error.message);
+        });
+      }
+
+      return updated;
+    });
+  };
+
+  const selectVistaShieldPlan = (variantId: 'variant-1' | 'variant-2') => {
+    const isV1 = variantId === 'variant-1';
+    const plan: SelectedVistaShieldPlan = {
+      variantId,
+      variantName: isV1 ? 'Variant 1' : 'Variant 2',
+      maxBenefit: isV1 ? vistaShieldConfig.v1MaxBenefit : vistaShieldConfig.v2MaxBenefit,
+      mrp: isV1 ? vistaShieldConfig.v1Price : vistaShieldConfig.v2Price,
+      gstIncluded: true,
+      selectedAt: new Date().toISOString()
+    };
+    setSelectedVistaShieldPlan(plan);
+  };
+
+  const clearSelectedVistaShieldPlan = () => {
+    setSelectedVistaShieldPlan(null);
+  };
+
 
   const updateRepairProblemPrice = (id: string, newPrice: number) => {
     setRepairProblems((prev) =>
@@ -400,37 +810,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `prob_${Date.now()}`
     };
     setRepairProblems((prev) => [...prev, newProblem]);
-  };
-
-  // Cart Handlers
-  const addToCart = (product: Product, quantity = 1, selectedModel?: string) => {
-    setCart((prevCart) => {
-      const existingIndex = prevCart.findIndex((item) => item.product.id === product.id && item.selectedModel === selectedModel);
-      if (existingIndex > -1) {
-        const updated = [...prevCart];
-        updated[existingIndex].quantity += quantity;
-        return updated;
-      }
-      return [...prevCart, { product, quantity, selectedModel }];
-    });
-  };
-
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
-  };
-
-  const updateCartQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((item) => (item.product.id === productId ? { ...item, quantity } : item))
-    );
-  };
-
-  const clearCart = () => {
-    setCart([]);
   };
 
   const toggleWishlist = (productId: string) => {
@@ -720,6 +1099,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSupabaseConnected: isSupabaseConfigured,
         isCustomerAuthenticated,
         customerUser,
+        registeredUsers,
         isAuthModalOpen,
         authModalContext,
         openCustomerAuthModal,
@@ -758,6 +1138,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addRepairProblem,
         announcementBanner,
         setAnnouncementBanner,
+        vistaShieldConfig,
+        updateVistaShieldConfig,
+        selectedVistaShieldPlan,
+        selectVistaShieldPlan,
+        clearSelectedVistaShieldPlan,
       }}
     >
       {children}

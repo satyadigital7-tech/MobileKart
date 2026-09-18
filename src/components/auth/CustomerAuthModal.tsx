@@ -35,6 +35,7 @@ export const CustomerAuthModal: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [errorCode, setErrorCode] = useState<'PHONE_ALREADY_REGISTERED' | 'EMAIL_ALREADY_REGISTERED' | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
 
   if (!isAuthModalOpen) return null;
@@ -49,6 +50,7 @@ export const CustomerAuthModal: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setErrorCode(null);
     setSuccessMsg('');
     setLoading(true);
 
@@ -86,6 +88,18 @@ export const CustomerAuthModal: React.FC = () => {
           return;
         }
 
+        // Call customerSignup with strict account isolation & duplicate phone check
+        const signupRes = customerSignup(fullName, emailOrPhone.trim(), phone || emailOrPhone.trim(), password);
+
+        if (!signupRes.success) {
+          setErrorMsg(signupRes.message || 'Account registration failed.');
+          if (signupRes.error === 'PHONE_ALREADY_REGISTERED' || signupRes.error === 'EMAIL_ALREADY_REGISTERED') {
+            setErrorCode(signupRes.error);
+          }
+          setLoading(false);
+          return;
+        }
+
         if (isSupabaseConfigured && emailOrPhone.includes('@')) {
           const { error } = await supabase.auth.signUp({
             email: emailOrPhone.trim(),
@@ -102,7 +116,6 @@ export const CustomerAuthModal: React.FC = () => {
           }
         }
 
-        customerSignup(fullName, emailOrPhone.trim(), phone, password);
         setSuccessMsg('Account created successfully!');
         setTimeout(() => {
           handleSuccessFlow();
@@ -184,12 +197,49 @@ export const CustomerAuthModal: React.FC = () => {
           </div>
 
           {/* Feedback Banners */}
-          {errorMsg && (
+          {errorCode === 'PHONE_ALREADY_REGISTERED' ? (
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl space-y-3 font-sans">
+              <div className="flex items-start gap-2.5 text-amber-900">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-black text-xs uppercase tracking-wider text-amber-950">Mobile number already registered</div>
+                  <div className="text-xs text-amber-900 font-semibold mt-0.5">
+                    An account already exists with this mobile number. Please log in to your existing account instead.
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setErrorCode(null);
+                    setErrorMsg('');
+                  }}
+                  className="bg-teal-800 hover:bg-teal-900 text-white font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition shadow-sm"
+                >
+                  Log In to Existing Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhone('');
+                    setEmailOrPhone('');
+                    setErrorCode(null);
+                    setErrorMsg('');
+                  }}
+                  className="bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] px-3.5 py-2 rounded-xl border border-slate-300 transition"
+                >
+                  Use Another Number
+                </button>
+              </div>
+            </div>
+          ) : errorMsg ? (
             <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
-          )}
+          ) : null}
           {successMsg && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />

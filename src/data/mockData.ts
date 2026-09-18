@@ -1,4 +1,4 @@
-import type { Brand, MobileModel, Product, RepairProblem, ServiceArea, TimeSlot, Coupon, RepairBooking, Order, UserReview } from '../types';
+import type { Brand, MobileModel, Product, RepairProblem, ServiceArea, TimeSlot, Coupon, RepairBooking, Order, UserReview, VistaShieldConfig } from '../types';
 
 export const BRANDS: Brand[] = [
   {
@@ -601,3 +601,27 @@ export const SAMPLE_REVIEWS: UserReview[] = [
     verified: true
   }
 ];
+
+export const INITIAL_VISTA_SHIELD_CONFIG: VistaShieldConfig = {
+  isEnabled: true,
+  sectionTitle: 'MobileKart Vista Shield – Powered by OneAssist',
+  poweredBy: 'POWERED BY ONEASSIST',
+  subtitle: 'Know Your Plan Better',
+  tenure: '1 Year from date of purchase',
+  productName: 'Existing Phone Screen Protection Plan',
+  serviceBenefit: 'Screen Protection',
+  serviceRequestsCount: '1',
+  freeDoorstepPickupDrop: true,
+  authorizedServiceCenter: 'OneAssist Authorized Service Center / MobileKart',
+  excessFees: '₹199/-',
+  coolingPeriod: '15 Days',
+  v1Price: 1798,
+  v1MaxBenefit: 10000,
+  v1Badge: 'MOST POPULAR',
+  v2Price: 1598,
+  v2MaxBenefit: 7500,
+  trustLineTitle: 'Trust Line',
+  trustLineText: 'After booking your plan, always verify the policy document directly through the official OneAssist App.',
+  trustLineHighlight: '100% Official & Secure.'
+};
+

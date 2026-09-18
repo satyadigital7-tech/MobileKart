@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wrench, 
   ShoppingBag, 
@@ -7,12 +7,16 @@ import {
   Plus, 
   Trash2,
   Edit,
-  Megaphone,
   CheckCircle2,
-  X
+  X,
+  ShieldCheck,
+  ShoppingCart,
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { AdminLayout } from '../admin/layouts/AdminLayout';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { Product, RepairStatus, RepairBooking, Coupon, ProductCategory, RepairProblem, RepairCategoryType } from '../types';
 
 export const AdminPage: React.FC = () => {
@@ -23,6 +27,7 @@ export const AdminPage: React.FC = () => {
     serviceAreas, 
     coupons,
     repairProblems,
+    registeredUsers,
     updateRepairProblemPrice,
     updateRepairProblem,
     addRepairProblem,
@@ -37,10 +42,106 @@ export const AdminPage: React.FC = () => {
     toggleServiceArea,
     addServiceArea,
     addCoupon,
-    deleteCoupon
+    deleteCoupon,
+    vistaShieldConfig,
+    updateVistaShieldConfig
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'repairs' | 'services' | 'products' | 'orders' | 'areas' | 'coupons' | 'banner'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'repairs' | 'services' | 'products' | 'orders' | 'areas' | 'coupons' | 'banner' | 'vista-shield' | 'customer-carts' | 'customer-accounts'>('overview');
+
+  // Customer Carts State for Admin Inspection (Req #20)
+  const [customerCarts, setCustomerCarts] = useState<Array<{
+    userId: string;
+    customerName?: string;
+    email?: string;
+    items: Array<{ productName: string; selectedModel?: string; quantity: number; price: number }>;
+    total: number;
+    updatedAt: string;
+  }>>([]);
+
+  useEffect(() => {
+    if (activeTab === 'customer-carts') {
+      const fetchCustomerCarts = async () => {
+        const cartsMap: { [userId: string]: typeof customerCarts[0] } = {};
+
+        // 1. Fetch from Supabase cart_items if configured
+        if (isSupabaseConfigured) {
+          try {
+            const { data, error } = await supabase
+              .from('cart_items')
+              .select('*, products(*)');
+            
+            if (!error && data) {
+              data.forEach((ci: any) => {
+                const uId = ci.user_id;
+                if (!cartsMap[uId]) {
+                  cartsMap[uId] = {
+                    userId: uId,
+                    items: [],
+                    total: 0,
+                    updatedAt: ci.updated_at ? new Date(ci.updated_at).toLocaleString() : new Date().toLocaleString()
+                  };
+                }
+                const prod = ci.products || products.find((p) => p.id === ci.product_id);
+                const price = prod ? (prod.discountPrice || prod.originalPrice || 0) : 0;
+                const productName = prod ? prod.name : `Product (${ci.product_id})`;
+                cartsMap[uId].items.push({
+                  productName,
+                  selectedModel: ci.selected_model,
+                  quantity: ci.quantity,
+                  price
+                });
+                cartsMap[uId].total += price * ci.quantity;
+              });
+            }
+          } catch (err) {
+            console.warn('Admin customer carts fetch notice:', err);
+          }
+        }
+
+        // 2. Scan localStorage for local customer user carts for demo/testing fallback
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('hmc_user_cart_')) {
+              const uId = key.replace('hmc_user_cart_', '');
+              if (!cartsMap[uId]) {
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                  const items: any[] = JSON.parse(raw);
+                  if (items && items.length > 0) {
+                    let total = 0;
+                    const parsedItems = items.map((item: any) => {
+                      const price = item.product?.discountPrice || item.product?.originalPrice || 0;
+                      total += price * (item.quantity || 1);
+                      return {
+                        productName: item.product?.name || 'Item',
+                        selectedModel: item.selectedModel,
+                        quantity: item.quantity || 1,
+                        price
+                      };
+                    });
+                    cartsMap[uId] = {
+                      userId: uId,
+                      items: parsedItems,
+                      total,
+                      updatedAt: new Date().toLocaleString()
+                    };
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('LocalStorage scan notice:', e);
+        }
+
+        setCustomerCarts(Object.values(cartsMap));
+      };
+
+      fetchCustomerCarts();
+    }
+  }, [activeTab, products]);
 
   // Selected Repair Editing Modal/Inline
   const [selectedRepair, setSelectedRepair] = useState<RepairBooking | null>(null);
@@ -79,6 +180,53 @@ export const AdminPage: React.FC = () => {
   // Banner Editor State
   const [bannerInput, setBannerInput] = useState(announcementBanner);
   const [bannerSavedAlert, setBannerSavedAlert] = useState(false);
+
+  // Vista Shield Editor State
+  const [vsIsEnabled, setVsIsEnabled] = useState(vistaShieldConfig?.isEnabled ?? true);
+  const [vsTitle, setVsTitle] = useState(vistaShieldConfig?.sectionTitle || 'MobileKart Vista Shield – Powered by OneAssist');
+  const [vsSubtitle, setVsSubtitle] = useState(vistaShieldConfig?.subtitle || 'Know Your Plan Better');
+  const [vsV1Price, setVsV1Price] = useState(vistaShieldConfig?.v1Price || 1798);
+  const [vsV1MaxBenefit, setVsV1MaxBenefit] = useState(vistaShieldConfig?.v1MaxBenefit || 10000);
+  const [vsV1Badge, setVsV1Badge] = useState(vistaShieldConfig?.v1Badge || 'MOST POPULAR');
+  const [vsV2Price, setVsV2Price] = useState(vistaShieldConfig?.v2Price || 1598);
+  const [vsV2MaxBenefit, setVsV2MaxBenefit] = useState(vistaShieldConfig?.v2MaxBenefit || 7500);
+  const [vsTenure, setVsTenure] = useState(vistaShieldConfig?.tenure || '1 Year from date of purchase');
+  const [vsExcessFee, setVsExcessFee] = useState(vistaShieldConfig?.excessFees || '₹199/-');
+  const [vsCoolingPeriod, setVsCoolingPeriod] = useState(vistaShieldConfig?.coolingPeriod || '15 Days');
+  const [vsServiceRequests, setVsServiceRequests] = useState(vistaShieldConfig?.serviceRequestsCount || '1');
+  const [vsServiceCenter, setVsServiceCenter] = useState(vistaShieldConfig?.authorizedServiceCenter || 'OneAssist Authorized Service Center / MobileKart');
+  const [vsProductName, setVsProductName] = useState(vistaShieldConfig?.productName || 'Existing Phone Screen Protection Plan');
+  const [vsServiceBenefit, setVsServiceBenefit] = useState(vistaShieldConfig?.serviceBenefit || 'Screen Protection');
+  const [vsTrustTitle, setVsTrustTitle] = useState(vistaShieldConfig?.trustLineTitle || 'Trust Line');
+  const [vsTrustText, setVsTrustText] = useState(vistaShieldConfig?.trustLineText || 'After booking your plan, always verify the policy document directly through the official OneAssist App.');
+  const [vsTrustHighlight, setVsTrustHighlight] = useState(vistaShieldConfig?.trustLineHighlight || '100% Official & Secure.');
+  const [vsSavedAlert, setVsSavedAlert] = useState(false);
+
+  const handleSaveVistaShield = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateVistaShieldConfig({
+      isEnabled: vsIsEnabled,
+      sectionTitle: vsTitle,
+      subtitle: vsSubtitle,
+      v1Price: Number(vsV1Price),
+      v1MaxBenefit: Number(vsV1MaxBenefit),
+      v1Badge: vsV1Badge,
+      v2Price: Number(vsV2Price),
+      v2MaxBenefit: Number(vsV2MaxBenefit),
+      tenure: vsTenure,
+      excessFees: vsExcessFee,
+      coolingPeriod: vsCoolingPeriod,
+      serviceRequestsCount: vsServiceRequests,
+      authorizedServiceCenter: vsServiceCenter,
+      productName: vsProductName,
+      serviceBenefit: vsServiceBenefit,
+      trustLineTitle: vsTrustTitle,
+      trustLineText: vsTrustText,
+      trustLineHighlight: vsTrustHighlight
+    });
+    setVsSavedAlert(true);
+    setTimeout(() => setVsSavedAlert(false), 3500);
+  };
 
   // Repair Service & Pricing Management State
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
@@ -162,7 +310,7 @@ export const AdminPage: React.FC = () => {
       category: newProdCategory,
       categoryName: newProdCategory.replace('-', ' ').toUpperCase(),
       brand: newProdBrand,
-      compatibleModels: newProdModels.split(',').map(s => s.trim()),
+      compatibleModels: newProdModels.split(',').map((s: string) => s.trim()),
       originalPrice: Number(newProdPrice),
       discountPrice: Number(newProdDisc),
       rating: 4.8,
@@ -285,10 +433,28 @@ export const AdminPage: React.FC = () => {
             Coupons ({coupons.length})
           </button>
           <button
+            onClick={() => setActiveTab('vista-shield')}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'vista-shield' ? 'bg-[#123477] text-white font-black shadow-sm border border-[#C9A646]' : 'text-[#123477] hover:bg-[#123477]/10 font-extrabold'}`}
+          >
+            🛡️ Vista Shield Section
+          </button>
+          <button
             onClick={() => setActiveTab('banner')}
             className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'banner' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
           >
             Site Announcement UI
+          </button>
+          <button
+            onClick={() => setActiveTab('customer-carts')}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'customer-carts' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+          >
+            🛒 Customer Carts ({customerCarts.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('customer-accounts')}
+            className={`px-4 py-2.5 rounded-xl transition shrink-0 ${activeTab === 'customer-accounts' ? 'bg-blue-600 text-white font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+          >
+            👥 Customer Accounts ({registeredUsers.length})
           </button>
         </div>
 
@@ -1320,13 +1486,300 @@ export const AdminPage: React.FC = () => {
           </div>
         )}
 
+        {/* VISTA SHIELD INSURANCE MANAGEMENT TAB */}
+        {activeTab === 'vista-shield' && (
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+              <div className="space-y-1">
+                <h3 className="font-black text-[#123477] text-xl flex items-center gap-2">
+                  <ShieldCheck className="w-6 h-6 text-[#C9A646]" />
+                  MobileKart Vista Shield – Powered by OneAssist Settings
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold">
+                  Manage live frontend section visibility, plan titles, variants pricing, coverage benefits, tenure, excess fees, and trust line wording.
+                </p>
+              </div>
+
+              {/* Enable / Disable Toggle */}
+              <div className="flex items-center gap-3 bg-slate-100 p-2.5 rounded-2xl border border-slate-300 shrink-0">
+                <span className="text-xs font-black text-slate-700">Section Active on Site:</span>
+                <button
+                  type="button"
+                  onClick={() => setVsIsEnabled(!vsIsEnabled)}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-black transition ${
+                    vsIsEnabled ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-300 text-slate-700'
+                  }`}
+                >
+                  {vsIsEnabled ? 'ENABLED' : 'DISABLED'}
+                </button>
+              </div>
+            </div>
+
+            {vsSavedAlert && (
+              <div className="p-4 bg-emerald-50 border-2 border-emerald-300 text-emerald-900 text-xs font-black rounded-2xl flex items-center gap-3 animate-fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>Vista Shield Section configuration saved and updated across live MobileKart store!</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveVistaShield} className="space-y-8 text-xs font-medium">
+              
+              {/* Section Header Settings */}
+              <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h4 className="font-black text-[#123477] text-sm uppercase tracking-wider">1. Section Header & Subtitle</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Section Main Title (H2)</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsTitle}
+                      onChange={(e) => setVsTitle(e.target.value)}
+                      placeholder="MobileKart Vista Shield – Powered by OneAssist"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-bold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Subtitle (H3)</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsSubtitle}
+                      onChange={(e) => setVsSubtitle(e.target.value)}
+                      placeholder="Know Your Plan Better"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-bold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Plan Variant 1 Settings */}
+              <div className="space-y-4 bg-amber-50/50 p-5 rounded-2xl border-2 border-[#C9A646]">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-black text-[#123477] text-sm uppercase tracking-wider">2. Variant 1 Settings (Highlighted)</h4>
+                  <span className="bg-[#C9A646] text-[#123477] text-[10px] font-black px-2.5 py-0.5 rounded-md">MOST POPULAR</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">MRP Price (Incl. GST) (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      value={vsV1Price}
+                      onChange={(e) => setVsV1Price(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-black text-sm outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Maximum Benefit Cover (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      value={vsV1MaxBenefit}
+                      onChange={(e) => setVsV1MaxBenefit(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-black text-sm outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Badge Text</label>
+                    <input
+                      type="text"
+                      value={vsV1Badge}
+                      onChange={(e) => setVsV1Badge(e.target.value)}
+                      placeholder="MOST POPULAR"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-bold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Plan Variant 2 Settings */}
+              <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h4 className="font-black text-[#123477] text-sm uppercase tracking-wider">3. Variant 2 Settings</h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">MRP Price (Incl. GST) (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      value={vsV2Price}
+                      onChange={(e) => setVsV2Price(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-black text-sm outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Maximum Benefit Cover (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      value={vsV2MaxBenefit}
+                      onChange={(e) => setVsV2MaxBenefit(Number(e.target.value))}
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-black text-sm outline-none focus:border-[#123477]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Coverage & Policy Rules */}
+              <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h4 className="font-black text-[#123477] text-sm uppercase tracking-wider">4. Policy Terms & Details</h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Plan Tenure</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsTenure}
+                      onChange={(e) => setVsTenure(e.target.value)}
+                      placeholder="1 Year from date of purchase"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Excess Fees</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsExcessFee}
+                      onChange={(e) => setVsExcessFee(e.target.value)}
+                      placeholder="₹199/-"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Cooling Period</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsCoolingPeriod}
+                      onChange={(e) => setVsCoolingPeriod(e.target.value)}
+                      placeholder="15 Days"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Service Request Count</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsServiceRequests}
+                      onChange={(e) => setVsServiceRequests(e.target.value)}
+                      placeholder="1"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-slate-800 font-extrabold mb-1">Authorized Service Center Info</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsServiceCenter}
+                      onChange={(e) => setVsServiceCenter(e.target.value)}
+                      placeholder="OneAssist Authorized Service Center / MobileKart"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Product Description Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsProductName}
+                      onChange={(e) => setVsProductName(e.target.value)}
+                      placeholder="Existing Phone Screen Protection Plan"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Service Benefit Title</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsServiceBenefit}
+                      onChange={(e) => setVsServiceBenefit(e.target.value)}
+                      placeholder="Screen Protection"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Trust Line Box Settings */}
+              <div className="space-y-4 bg-blue-50/60 p-5 rounded-2xl border border-blue-200">
+                <h4 className="font-black text-[#123477] text-sm uppercase tracking-wider">5. Trust Line Box Settings</h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Trust Line Box Heading</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsTrustTitle}
+                      onChange={(e) => setVsTrustTitle(e.target.value)}
+                      placeholder="Trust Line"
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-bold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-extrabold mb-1">Trust Line Badge Text</label>
+                    <input
+                      type="text"
+                      required
+                      value={vsTrustHighlight}
+                      onChange={(e) => setVsTrustHighlight(e.target.value)}
+                      placeholder="100% Official & Secure."
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-900 font-bold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-slate-800 font-extrabold mb-1">Trust Line Message Content</label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={vsTrustText}
+                      onChange={(e) => setVsTrustText(e.target.value)}
+                      placeholder="After booking your plan, always verify the policy document directly through the official OneAssist App."
+                      className="w-full bg-white border border-slate-300 rounded-2xl p-3 text-slate-900 font-semibold outline-none focus:border-[#123477]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="bg-[#123477] hover:bg-[#0e2759] text-white font-black text-sm px-8 py-4 rounded-2xl transition shadow-lg flex items-center justify-center gap-2 border border-[#C9A646]"
+                >
+                  <ShieldCheck className="w-5 h-5 text-[#C9A646]" /> Save & Publish Vista Shield Config
+                </button>
+              </div>
+
+            </form>
+          </div>
+        )}
+
         {/* SITE ANNOUNCEMENT BANNER CONTROL TAB */}
         {activeTab === 'banner' && (
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
             <div className="space-y-1">
               <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
-                <Megaphone className="w-5 h-5 text-teal-700" />
-                Customer Website Announcement Banner
+                <span>📣 Customer Website Announcement Banner</span>
               </h3>
               <p className="text-xs text-slate-500 font-medium">
                 Update the live promotional message displayed at the very top of all public customer website pages.
@@ -1372,6 +1825,192 @@ export const AdminPage: React.FC = () => {
             </form>
           </div>
         )}
+
+        {/* CUSTOMER CARTS INSPECTION TAB (Requirement #20) */}
+        {activeTab === 'customer-carts' && (
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6 font-sans">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-blue-600" />
+                  <span>Customer Carts Inspection Panel</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Authorized admin view for active user shopping carts isolated by unique authenticated user ID.
+                </p>
+              </div>
+              <div className="bg-blue-50 text-blue-800 text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-200">
+                Total Active Carts: {customerCarts.length}
+              </div>
+            </div>
+
+            {customerCarts.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 font-semibold bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                No active customer carts found in database or local user sessions.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 font-extrabold bg-slate-50/50">
+                      <th className="py-3 px-4">User ID</th>
+                      <th className="py-3 px-4">Cart Items & Quantities</th>
+                      <th className="py-3 px-4">Total Quantity</th>
+                      <th className="py-3 px-4">Cart Total</th>
+                      <th className="py-3 px-4">Last Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {customerCarts.map((c) => {
+                      const totalQty = c.items.reduce((sum, item) => sum + item.quantity, 0);
+                      return (
+                        <tr key={c.userId} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-4 font-mono font-bold text-blue-700">
+                            {c.userId}
+                          </td>
+                          <td className="py-3 px-4 space-y-1">
+                            {c.items.map((item, idx) => (
+                              <div key={idx} className="text-slate-800 font-medium">
+                                <span className="font-bold">{item.productName}</span>
+                                {item.selectedModel && (
+                                  <span className="text-[10px] text-slate-500 ml-1">({item.selectedModel})</span>
+                                )}
+                                <span className="text-slate-500 font-mono text-[11px] ml-2">
+                                  x{item.quantity} @ ₹{item.price}
+                                </span>
+                              </div>
+                            ))}
+                          </td>
+                          <td className="py-3 px-4 font-bold text-slate-700">{totalQty} items</td>
+                          <td className="py-3 px-4 font-black text-slate-900 text-sm">₹{c.total.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-slate-500 font-medium">{c.updatedAt}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CUSTOMER ACCOUNTS & DUPLICATE DETECTION TAB (PRD Req #19) */}
+        {activeTab === 'customer-accounts' && (() => {
+          // Detect duplicate phone numbers across registered accounts
+          const phoneCounts: { [phone: string]: typeof registeredUsers } = {};
+          registeredUsers.forEach((u) => {
+            const key = u.normalizedPhone || u.phone;
+            if (key) {
+              if (!phoneCounts[key]) phoneCounts[key] = [];
+              phoneCounts[key].push(u);
+            }
+          });
+
+          const duplicatePhoneGroups = Object.entries(phoneCounts).filter(([_, group]) => group.length > 1);
+
+          return (
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6 font-sans">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    <span>Customer Account Management & Security</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Strict identity isolation by authenticated <code className="bg-slate-100 px-1 py-0.5 rounded text-blue-800">user_id</code>. Mobile numbers are not auto-linked.
+                  </p>
+                </div>
+                <div className="bg-emerald-50 text-emerald-800 text-xs font-bold px-3.5 py-1.5 rounded-xl border border-emerald-200">
+                  Total Registered Accounts: {registeredUsers.length}
+                </div>
+              </div>
+
+              {/* Duplicate Phone Detection Warning Box (PRD Req #19) */}
+              {duplicatePhoneGroups.length > 0 ? (
+                <div className="p-5 bg-amber-50 border border-amber-300 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-2 text-amber-900 font-black text-sm">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <span>⚠ Duplicate Phone Numbers Detected ({duplicatePhoneGroups.length} Conflict Groups)</span>
+                  </div>
+                  <p className="text-xs text-amber-800 font-medium">
+                    The following mobile numbers are present across multiple account IDs. Accounts are strictly isolated by unique <code className="font-mono bg-amber-100 px-1">user_id</code> and will <strong>never</strong> auto-merge.
+                  </p>
+
+                  <div className="space-y-3">
+                    {duplicatePhoneGroups.map(([phoneNum, accList]) => (
+                      <div key={phoneNum} className="bg-white p-4 rounded-xl border border-amber-200 space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-mono font-bold text-amber-900 text-sm">{phoneNum}</span>
+                          <span className="bg-amber-100 text-amber-900 font-extrabold px-2.5 py-0.5 rounded-full text-[10px]">
+                            {accList.length} Accounts Associated
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+                          {accList.map((acc) => (
+                            <div key={acc.id} className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-slate-800 space-y-0.5">
+                              <div className="font-bold flex justify-between">
+                                <span>{acc.name}</span>
+                                <span className="text-[10px] text-blue-700 font-semibold">{acc.role || 'Customer'}</span>
+                              </div>
+                              <div className="text-[11px] font-mono text-slate-500">ID: {acc.id}</div>
+                              <div className="text-[11px] text-slate-500">{acc.email}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>No duplicate phone number conflicts detected. All mobile registrations are 100% unique & isolated.</span>
+                </div>
+              )}
+
+              {/* Account Registry Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 font-extrabold bg-slate-50/50">
+                      <th className="py-3 px-4">Customer Name</th>
+                      <th className="py-3 px-4">Phone Number</th>
+                      <th className="py-3 px-4">Email</th>
+                      <th className="py-3 px-4">User ID (Identity Key)</th>
+                      <th className="py-3 px-4">Account Role</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Created Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {registeredUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3 px-4 font-bold text-slate-900">{u.name}</td>
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-700">
+                          {u.phone}
+                          {u.normalizedPhone && u.normalizedPhone !== u.phone && (
+                            <span className="text-[10px] text-slate-500 block font-normal">Norm: {u.normalizedPhone}</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 font-medium">{u.email}</td>
+                        <td className="py-3 px-4 font-mono text-blue-700 font-bold">{u.id}</td>
+                        <td className="py-3 px-4 font-semibold text-slate-700">{u.role || 'Customer'}</td>
+                        <td className="py-3 px-4">
+                          <span className="bg-emerald-50 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-200">
+                            Active
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-500 font-medium">
+                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Active'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </AdminLayout>
   );

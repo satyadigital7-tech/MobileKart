@@ -19,6 +19,9 @@ export type CustomerUser = {
   name: string;
   email: string;
   phone: string;
+  normalizedPhone?: string;
+  role?: string;
+  createdAt?: string;
   address?: {
     houseNumber?: string;
     street?: string;
@@ -137,6 +140,8 @@ export type RepairBooking = {
 };
 
 export type CartItem = {
+  id?: string;
+  userId?: string;
   product: Product;
   quantity: number;
   selectedModel?: string;
@@ -215,3 +220,36 @@ export type UserReview = {
   itemName: string;
   verified: boolean;
 };
+
+export type VistaShieldConfig = {
+  isEnabled: boolean;
+  sectionTitle: string;
+  poweredBy: string;
+  subtitle: string;
+  tenure: string;
+  productName: string;
+  serviceBenefit: string;
+  serviceRequestsCount: string;
+  freeDoorstepPickupDrop: boolean;
+  authorizedServiceCenter: string;
+  excessFees: string;
+  coolingPeriod: string;
+  v1Price: number;
+  v1MaxBenefit: number;
+  v1Badge: string;
+  v2Price: number;
+  v2MaxBenefit: number;
+  trustLineTitle: string;
+  trustLineText: string;
+  trustLineHighlight: string;
+};
+
+export type SelectedVistaShieldPlan = {
+  variantId: 'variant-1' | 'variant-2';
+  variantName: string;
+  maxBenefit: number;
+  mrp: number;
+  gstIncluded: boolean;
+  selectedAt: string;
+} | null;
+
